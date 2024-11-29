@@ -1,9 +1,11 @@
-import { Bell, Infinity, UserCircle } from 'lucide-react';
+import { Bell, Infinity, UserCircle, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useState } from 'react';
 
 export function Header() {
   const { user, signOut, isEmployer } = useAuth();
+  const [showDropdown, setShowDropdown] = useState(false);
 
   return (
     <header className="bg-black text-white py-4">
@@ -23,19 +25,49 @@ export function Header() {
         </div>
 
         <div className="flex items-center space-x-4">
-          {user && <Bell className="w-5 h-5 cursor-pointer hover:text-blue-400" />}
           {user ? (
-            <div className="flex items-center space-x-4">
-              <Link to="/dashboard">
-                <UserCircle className="w-6 h-6 cursor-pointer hover:text-blue-400" />
-              </Link>
-              <button
-                onClick={() => signOut()}
-                className="text-sm hover:text-blue-400"
-              >
-                Sign Out
-              </button>
-            </div>
+            <>
+              <Bell className="w-5 h-5 cursor-pointer hover:text-blue-400" />
+              <div className="relative">
+                <button 
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="flex items-center space-x-2 hover:text-blue-400"
+                >
+                  <UserCircle className="w-6 h-6" />
+                </button>
+                {showDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <Link
+                      to="/dashboard"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      Profile
+                    </Link>
+                    <div className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
+                    </div>
+                    <button
+                      onClick={() => {
+                        signOut();
+                        setShowDropdown(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             <Link to="/login" className="hover:text-blue-400">
               Sign In

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Building2, GraduationCap, Linkedin } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { signInDemoEmployer } from '../../lib/auth';
 import { toast } from 'sonner';
 
 export function UniversalSignIn() {
@@ -15,7 +16,17 @@ export function UniversalSignIn() {
     setLoading(true);
 
     try {
-      // Validate work email for employers
+      // Auto-login for demo employer
+      if (email === 'rraj@growthpods.io') {
+        const { error } = await signInDemoEmployer();
+        if (error) throw error;
+        
+        toast.success('Signed in successfully!');
+        navigate('/dashboard');
+        return;
+      }
+
+      // Regular magic link flow for other emails
       const domain = email.split('@')[1];
       const commonDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'];
       if (commonDomains.includes(domain)) {
@@ -37,7 +48,8 @@ export function UniversalSignIn() {
       toast.success('Check your email for the magic link!');
       setEmail('');
     } catch (error) {
-      toast.error('Failed to send magic link. Please try again.');
+      toast.error('Failed to sign in. Please try again.');
+      console.error('Sign in error:', error);
     } finally {
       setLoading(false);
     }
@@ -62,7 +74,6 @@ export function UniversalSignIn() {
       if (error) throw error;
       if (!data.url) throw new Error('No OAuth URL returned');
 
-      // Redirect to LinkedIn OAuth flow
       window.location.href = data.url;
     } catch (error) {
       toast.error('Failed to sign in with LinkedIn');
@@ -139,10 +150,10 @@ export function UniversalSignIn() {
             {loading ? (
               <span className="flex items-center justify-center">
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                Sending...
+                Signing in...
               </span>
             ) : (
-              'Send Magic Link'
+              'Sign In'
             )}
           </button>
         </form>

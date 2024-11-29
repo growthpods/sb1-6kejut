@@ -1,31 +1,45 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useLinkedIn } from 'react-linkedin-login-oauth2';
+import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 
 export function LinkedInCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { linkedInLogin } = useLinkedIn();
 
   useEffect(() => {
     const code = searchParams.get('code');
+    const error = searchParams.get('error');
+    const error_description = searchParams.get('error_description');
+
+    if (error || error_description) {
+      console.error('LinkedIn OAuth error:', error_description);
+      toast.error('LinkedIn authentication failed');
+      navigate('/login');
+      return;
+    }
+
     if (code) {
       handleLinkedInCode(code);
     } else {
       toast.error('LinkedIn authentication failed');
-      navigate('/');
+      navigate('/login');
     }
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
   const handleLinkedInCode = async (code: string) => {
     try {
-      await linkedInLogin(code);
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      
+      if (error) throw error;
+      if (!data.session) throw new Error('No session returned');
+
+      toast.success('Successfully signed in with LinkedIn');
       navigate('/dashboard');
     } catch (error) {
       console.error('LinkedIn callback error:', error);
       toast.error('Failed to complete LinkedIn authentication');
-      navigate('/');
+      navigate('/login');
     }
   };
 

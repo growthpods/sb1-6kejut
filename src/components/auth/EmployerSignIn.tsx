@@ -14,7 +14,20 @@ export function EmployerSignIn() {
     setLoading(true);
 
     try {
-      // Validate work email
+      // Auto-login for specific employer email
+      if (email === 'rraj@growthpods.io') {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: 'rraj@growthpods.io',
+          password: 'employer123' // This is just for demo purposes
+        });
+
+        if (error) throw error;
+        
+        navigate('/dashboard');
+        return;
+      }
+
+      // Regular magic link flow for other emails
       const domain = email.split('@')[1];
       const commonDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'];
       if (commonDomains.includes(domain)) {
@@ -36,7 +49,7 @@ export function EmployerSignIn() {
       toast.success('Check your email for the magic link!');
       setEmail('');
     } catch (error) {
-      toast.error('Failed to send magic link. Please try again.');
+      toast.error('Failed to sign in. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -79,10 +92,10 @@ export function EmployerSignIn() {
           {loading ? (
             <span className="flex items-center justify-center">
               <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              Sending...
+              Signing in...
             </span>
           ) : (
-            'Send Magic Link'
+            'Sign In'
           )}
         </button>
       </form>
