@@ -1,41 +1,79 @@
-import { Linkedin } from 'lucide-react';
+import { useState } from 'react';
+import { GraduationCap, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { signInWithLinkedIn } from '../../lib/auth';
 import { toast } from 'sonner';
 
 export function StudentSignIn({ onClose }: { onClose?: () => void }) {
-  const handleLinkedInSignIn = async () => {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
     try {
-      const { url } = await signInWithLinkedIn();
-      window.location.href = url;
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+          data: { isEmployer: false }
+        }
+      });
+
+      if (error) throw error;
+      
+      toast.success('Check your email for the magic link!');
+      setEmail('');
     } catch (error) {
-      console.error('LinkedIn sign in error:', error);
-      toast.error('Failed to sign in with LinkedIn');
+      toast.error('Failed to sign in. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-md">
       <div className="text-center mb-8">
+        <div className="flex justify-center mb-4">
+          <GraduationCap className="w-12 h-12 text-blue-600" />
+        </div>
         <h1 className="text-2xl font-bold">Sign in to Apply</h1>
         <p className="text-gray-600 mt-2">
-          Use your LinkedIn profile to quickly apply for internships
+          Use your email to apply for internships
         </p>
       </div>
 
-      <div className="space-y-6">
+      <form onSubmit={handleSignIn} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Email Address
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+            disabled={loading}
+          />
+        </div>
+
         <button
-          onClick={handleLinkedInSignIn}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-[#0077b5] text-white hover:bg-[#006397] focus:outline-none focus:ring-2 focus:ring-[#0077b5] focus:ring-offset-2 transition-colors"
+          type="submit"
+          disabled={loading}
+          className="w-full py-2 px-4 rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          <Linkedin className="w-5 h-5" />
-          Continue with LinkedIn
+          {loading ? (
+            <span className="flex items-center justify-center">
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              Signing in...
+            </span>
+          ) : (
+            'Sign In with Email'
+          )}
         </button>
-        
-        <p className="text-sm text-center text-gray-500">
-          We'll use your LinkedIn profile to create your application
-        </p>
-      </div>
+      </form>
 
       {onClose && (
         <button

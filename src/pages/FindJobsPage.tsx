@@ -3,29 +3,17 @@ import { Link } from 'react-router-dom';
 import { SearchBar } from '../components/SearchBar';
 import { JobCard } from '../components/JobCard';
 import { JobFilters } from '../components/job/JobFilters';
-import { supabase } from '../lib/supabase';
+import { SAMPLE_JOBS } from '../data/sampleJobs';
 import type { Job } from '../types';
 
 export function FindJobsPage() {
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobs, setJobs] = useState<Job[]>(SAMPLE_JOBS);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
 
   useEffect(() => {
-    async function fetchJobs() {
-      const { data, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .order('posted_at', { ascending: false });
-
-      if (!error && data) {
-        setJobs(data);
-      }
-      setLoading(false);
-    }
-
-    fetchJobs();
+    setLoading(false);
   }, []);
 
   const handleSearch = (query: string, loc: string) => {

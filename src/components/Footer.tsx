@@ -15,25 +15,10 @@ export function Footer() {
           <div>
             <h3 className="text-xl font-semibold mb-4">Contact Info</h3>
             <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <MapPin className="w-5 h-5 text-blue-400 mt-1" />
-                <p className="text-gray-400">
-                  InnovanTech Inc.<br />
-                  6260 Westpark Dr. Suite 301<br />
-                  Houston, TX 77057<br />
-                  United States
-                </p>
-              </div>
               <div className="flex items-center space-x-3">
                 <Mail className="w-5 h-5 text-blue-400" />
-                <a href="mailto:info@innovantech.net" className="text-gray-400 hover:text-blue-400 transition-colors">
-                  info@innovantech.net
-                </a>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Phone className="w-5 h-5 text-blue-400" />
-                <a href="tel:+18774146668" className="text-gray-400 hover:text-blue-400 transition-colors">
-                  +1 (877) 414-6668
+                <a href="mailto:admin@internjobs.ai" className="text-gray-400 hover:text-blue-400 transition-colors">
+                  admin@internjobs.ai
                 </a>
               </div>
             </div>
@@ -45,11 +30,6 @@ export function Footer() {
               <li>
                 <a href="/jobs" className="text-gray-400 hover:text-blue-400 transition-colors">
                   Find Jobs
-                </a>
-              </li>
-              <li>
-                <a href="/talent" className="text-gray-400 hover:text-blue-400 transition-colors">
-                  Find Talent
                 </a>
               </li>
               <li>

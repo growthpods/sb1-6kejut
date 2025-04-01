@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Building2, GraduationCap, Linkedin } from 'lucide-react';
+import { Loader2, Building2, GraduationCap } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { signInDemoEmployer, signInWithLinkedIn } from '../../lib/auth';
+import { signInDemoEmployer } from '../../lib/auth';
 import { toast } from 'sonner';
 
 export function UniversalSignIn() {
@@ -52,16 +52,6 @@ export function UniversalSignIn() {
       console.error('Sign in error:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleLinkedInSignIn = async () => {
-    try {
-      const { url } = await signInWithLinkedIn();
-      window.location.href = url;
-    } catch (error) {
-      toast.error('Failed to sign in with LinkedIn');
-      console.error('LinkedIn sign in error:', error);
     }
   };
 
@@ -144,14 +134,14 @@ export function UniversalSignIn() {
       ) : (
         <div className="space-y-6">
           <button
-            onClick={handleLinkedInSignIn}
-            className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-[#0077b5] text-white hover:bg-[#006397] focus:outline-none focus:ring-2 focus:ring-[#0077b5] focus:ring-offset-2 transition-colors"
+            onClick={() => setIsEmployer(true)}
+            className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
           >
-            <Linkedin className="w-5 h-5" />
-            Sign in with LinkedIn
+            <GraduationCap className="w-5 h-5" />
+            Sign in with Email
           </button>
           <p className="text-sm text-center text-gray-500">
-            We'll use your LinkedIn profile to create your student account
+            We'll send you a magic link to sign in
           </p>
         </div>
       )}

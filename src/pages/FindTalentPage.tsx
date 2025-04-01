@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
 import { MapPin, Briefcase, GraduationCap } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
-import { EmployerSignIn } from '../components/auth/EmployerSignIn';
-import { useAuth } from '../contexts/AuthContext';
 import { SAMPLE_CANDIDATES } from '../data/sampleCandidates';
 import type { Candidate } from '../types';
 
 export function FindTalentPage() {
-  const { user } = useAuth();
   const [candidates, setCandidates] = useState<Candidate[]>(SAMPLE_CANDIDATES);
   const [loading, setLoading] = useState(true);
 
@@ -134,20 +131,7 @@ export function FindTalentPage() {
           </select>
         </div>
 
-        {!user ? (
-          <div className="relative">
-            <div className="absolute inset-0 backdrop-blur-md bg-white/30 z-10 flex items-center justify-center">
-              <div className="max-w-md w-full">
-                <EmployerSignIn />
-              </div>
-            </div>
-            <div className="filter blur-sm">
-              <CandidateList />
-            </div>
-          </div>
-        ) : (
-          <CandidateList />
-        )}
+        <CandidateList />
 
         {candidates.length === 0 && (
           <div className="text-center py-12">

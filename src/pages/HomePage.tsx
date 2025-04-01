@@ -2,49 +2,17 @@ import { useState, useEffect, useRef } from 'react';
 import { SearchBar } from '../components/SearchBar';
 import { JobCard } from '../components/JobCard';
 import { JobFilters } from '../components/job/JobFilters';
-import { StudentSignIn } from '../components/auth/StudentSignIn';
 import { supabase } from '../lib/supabase';
 import { initializeDatabase } from '../lib/initDatabase';
-import { useAuth } from '../contexts/AuthContext';
 import type { Job } from '../types';
 import { Link } from 'react-router-dom';
 import { SAMPLE_JOBS } from '../data/sampleJobs';
 
 export function HomePage() {
-  const { user } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-  const [scrollCount, setScrollCount] = useState(0);
   const jobsRef = useRef<HTMLDivElement>(null);
-  const lastScrollTop = useRef(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!user) {
-        const currentScrollTop = window.scrollY;
-        
-        // Detect scroll direction and significant movement
-        if (Math.abs(currentScrollTop - lastScrollTop.current) > 100) {
-          if (currentScrollTop > lastScrollTop.current) {
-            // Scrolling down
-            setScrollCount(prev => {
-              const newCount = prev + 1;
-              if (newCount >= 2) {
-                setShowLoginPrompt(true);
-              }
-              return newCount;
-            });
-          }
-          lastScrollTop.current = currentScrollTop;
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [user]);
 
   useEffect(() => {
     async function fetchJobs() {
@@ -195,15 +163,6 @@ export function HomePage() {
           </div>
         </div>
       </div>
-
-      {/* Login Prompt Overlay */}
-      {showLoginPrompt && !user && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300">
-          <div className="max-w-md w-full mx-4">
-            <StudentSignIn onClose={() => setShowLoginPrompt(false)} />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
