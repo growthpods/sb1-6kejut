@@ -12,7 +12,7 @@ export function Header() {
       <nav className="container mx-auto px-4 flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-2">
           <Infinity className="w-8 h-8 text-blue-500" />
-          <span className="text-xl font-semibold">InternMatch</span>
+          <span className="text-xl font-semibold">InternJobs.ai</span>
         </Link>
 
         <div className="flex space-x-8">

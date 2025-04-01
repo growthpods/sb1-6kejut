@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Building2, GraduationCap, Linkedin } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { signInDemoEmployer } from '../../lib/auth';
+import { signInDemoEmployer, signInWithLinkedIn } from '../../lib/auth';
 import { toast } from 'sonner';
 
 export function UniversalSignIn() {
@@ -57,24 +57,8 @@ export function UniversalSignIn() {
 
   const handleLinkedInSignIn = async () => {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'linkedin',
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-          queryParams: {
-            prompt: 'consent',
-            access_type: 'offline'
-          },
-          data: { 
-            isEmployer: false
-          }
-        }
-      });
-
-      if (error) throw error;
-      if (!data.url) throw new Error('No OAuth URL returned');
-
-      window.location.href = data.url;
+      const { url } = await signInWithLinkedIn();
+      window.location.href = url;
     } catch (error) {
       toast.error('Failed to sign in with LinkedIn');
       console.error('LinkedIn sign in error:', error);
@@ -91,7 +75,7 @@ export function UniversalSignIn() {
             <GraduationCap className="w-12 h-12 text-blue-600" />
           )}
         </div>
-        <h1 className="text-2xl font-bold">Welcome to InternMatch</h1>
+        <h1 className="text-2xl font-bold">Welcome to InternJobs.ai</h1>
         <p className="text-gray-600 mt-2">
           {isEmployer 
             ? 'Sign in to find top intern talent' 

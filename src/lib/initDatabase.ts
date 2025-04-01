@@ -1,6 +1,9 @@
 import { supabase } from './supabase';
 import { SAMPLE_JOBS } from '../data/sampleJobs';
 
+const BATCH_SIZE = 5;
+const BATCH_DELAY = 1000; // 1 second delay between batches
+
 export async function initializeDatabase() {
   try {
     // Check if we already have jobs
@@ -10,20 +13,26 @@ export async function initializeDatabase() {
       .limit(1);
 
     if (checkError) {
-      console.error('Error checking existing jobs:', checkError);
+      if (checkError.code === '42P01') {
+        console.log('Tables not yet created, waiting for migrations...');
+        // Wait a bit and try again
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return initializeDatabase();
+      }
+      console.error('Error checking jobs:', checkError);
       return;
     }
 
     // If we have existing jobs, no need to initialize
     if (existingJobs && existingJobs.length > 0) {
+      console.log('Database already initialized');
       return;
     }
 
     // Insert sample jobs in batches to avoid rate limits
-    const batchSize = 5;
     const batches = [];
-    for (let i = 0; i < SAMPLE_JOBS.length; i += batchSize) {
-      const batch = SAMPLE_JOBS.slice(i, i + batchSize).map(job => ({
+    for (let i = 0; i < SAMPLE_JOBS.length; i += BATCH_SIZE) {
+      const batch = SAMPLE_JOBS.slice(i, i + BATCH_SIZE).map(job => ({
         id: job.id,
         title: job.title,
         company: job.company,
@@ -44,14 +53,20 @@ export async function initializeDatabase() {
     for (const batch of batches) {
       const { error: insertError } = await supabase.from('jobs').insert(batch);
       if (insertError) {
-        console.error('Error inserting job batch:', insertError);
+        throw insertError;
       }
       // Add a small delay between batches to avoid rate limits
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
     }
 
     console.log('Sample data initialized successfully');
   } catch (error) {
-    console.error('Error initializing database:', error);
+    if (error.code === '42P01') {
+      console.log('Tables not yet created, waiting for migrations...');
+      // Wait a bit and try again
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return initializeDatabase();
+    }
+    console.error('Database initialization error:', error);
   }
 }

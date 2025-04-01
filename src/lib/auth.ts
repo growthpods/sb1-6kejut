@@ -2,6 +2,11 @@ import { supabase } from './supabase';
 
 const BACKOFF_DELAY = 1000; // Start with 1 second
 const MAX_RETRIES = 3;
+const LINKEDIN_SCOPES = [
+  'r_emailaddress',
+  'r_liteprofile',
+  'r_basicprofile'
+];
 
 async function withRetry<T>(operation: () => Promise<T>): Promise<T> {
   let lastError;
@@ -81,4 +86,28 @@ export async function validateWorkEmail(email: string) {
   }
   
   return { valid: true };
+}
+
+export async function signInWithLinkedIn() {
+  return withRetry(async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'linkedin',
+      options: {
+        redirectTo: `${window.location.origin}/linkedin`,
+        scopes: LINKEDIN_SCOPES.join(' '),
+        queryParams: {
+          prompt: 'consent',
+          access_type: 'offline'
+        },
+        data: { 
+          isEmployer: false
+        }
+      }
+    });
+
+    if (error) throw error;
+    if (!data.url) throw new Error('No OAuth URL returned');
+
+    return { url: data.url };
+  });
 }

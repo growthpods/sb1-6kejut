@@ -61,7 +61,7 @@ export function EmployerSignIn() {
         <div className="flex justify-center mb-4">
           <Building2 className="w-12 h-12 text-blue-600" />
         </div>
-        <h1 className="text-2xl font-bold">Welcome to InternMatch</h1>
+        <h1 className="text-2xl font-bold">Welcome to InternJobs.ai</h1>
         <p className="text-gray-600 mt-2">Sign in with your work email to find top intern talent</p>
       </div>
 

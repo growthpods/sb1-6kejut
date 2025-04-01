@@ -1,22 +1,13 @@
 import { Linkedin } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { signInWithLinkedIn } from '../../lib/auth';
 import { toast } from 'sonner';
 
 export function StudentSignIn({ onClose }: { onClose?: () => void }) {
   const handleLinkedInSignIn = async () => {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'linkedin',
-        options: {
-          redirectTo: `${window.location.origin}/linkedin`,
-          data: { isEmployer: false }
-        }
-      });
-
-      if (error) throw error;
-      if (!data.url) throw new Error('No OAuth URL returned');
-
-      window.location.href = data.url;
+      const { url } = await signInWithLinkedIn();
+      window.location.href = url;
     } catch (error) {
       console.error('LinkedIn sign in error:', error);
       toast.error('Failed to sign in with LinkedIn');
