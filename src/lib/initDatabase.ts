@@ -1,8 +1,8 @@
 import { supabase } from './supabase';
-import { SAMPLE_JOBS } from '../data/sampleJobs';
+// import { SAMPLE_JOBS } from '../data/sampleJobs'; // Removed import
 
-const BATCH_SIZE = 5;
-const BATCH_DELAY = 1000; // 1 second delay between batches
+// const BATCH_SIZE = 5; // No longer needed
+// const BATCH_DELAY = 1000; // No longer needed
 
 export async function initializeDatabase() {
   try {
@@ -29,39 +29,44 @@ export async function initializeDatabase() {
       return;
     }
 
-    // Insert sample jobs in batches to avoid rate limits
-    const batches = [];
-    for (let i = 0; i < SAMPLE_JOBS.length; i += BATCH_SIZE) {
-      const batch = SAMPLE_JOBS.slice(i, i + BATCH_SIZE).map(job => ({
-        id: job.id,
-        title: job.title,
-        company: job.company,
-        location: job.location,
-        description: job.description,
-        requirements: job.requirements,
-        type: job.type,
-        level: job.level,
-        applicants: job.applicants,
-        posted_at: job.postedAt.toISOString(),
-        company_logo: job.companyLogo,
-        external_link: null,
-        employer_id: 'system'
-      }));
-      batches.push(batch);
-    }
+    // --- Sample Data Insertion Logic Removed ---
+    // // Insert sample jobs in batches to avoid rate limits
+    // const batches = [];
+    // for (let i = 0; i < SAMPLE_JOBS.length; i += BATCH_SIZE) {
+    //   const batch = SAMPLE_JOBS.slice(i, i + BATCH_SIZE).map(job => ({
+    //     id: job.id,
+    //     title: job.title,
+    //     company: job.company,
+    //     location: job.location,
+    //     description: job.description,
+    //     requirements: job.requirements,
+    //     type: job.type,
+    //     level: job.level,
+    //     applicants: job.applicants,
+    //     posted_at: job.postedAt.toISOString(),
+    //     company_logo: job.companyLogo,
+    //     external_link: null,
+    //     employer_id: 'system'
+    //   }));
+    //   batches.push(batch);
+    // }
 
-    for (const batch of batches) {
-      const { error: insertError } = await supabase.from('jobs').insert(batch);
-      if (insertError) {
-        throw insertError;
-      }
-      // Add a small delay between batches to avoid rate limits
-      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
-    }
+    // for (const batch of batches) {
+    //   const { error: insertError } = await supabase.from('jobs').insert(batch);
+    //   if (insertError) {
+    //     throw insertError;
+    //   }
+    //   // Add a small delay between batches to avoid rate limits
+    //   await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+    // }
 
-    console.log('Sample data initialized successfully');
+    console.log('Skipping sample data initialization.');
+    // --- End of Removed Logic ---
+
   } catch (error) {
-    if (error.code === '42P01') {
+    // Keep error handling for table check
+    const err = error as { code?: string }; // Type assertion for error code
+    if (err.code === '42P01') {
       console.log('Tables not yet created, waiting for migrations...');
       // Wait a bit and try again
       await new Promise(resolve => setTimeout(resolve, 2000));
