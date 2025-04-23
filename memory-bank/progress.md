@@ -10,6 +10,7 @@ This file tracks what works, what's left to build, current status, and known iss
 - Direct API integration with Google Gemini for job description generation
 - Streaming API implementation for better response handling
 - System prompts with guardrails to ensure the LLM stays focused on job posting tasks
+- Enhanced job posting workflow to collect contact information
 
 ## What's Left to Build
 - Debug the chat interface to properly display responses from the Gemini API
@@ -19,6 +20,7 @@ This file tracks what works, what's left to build, current status, and known iss
 - Implement analytics for job posting performance
 - Add email notifications for job applications
 - Test the guardrails to ensure they're effective
+- Ensure the job posting workflow correctly collects contact information
 
 ## Current Status
 - The application is functional with basic features working
@@ -27,6 +29,7 @@ This file tracks what works, what's left to build, current status, and known iss
 - The chat interface for job posting needs debugging to display API responses
 - The API key is configured and working correctly
 - System prompts have been enhanced with guardrails to ensure the LLM stays focused on job posting tasks
+- Job posting workflow has been updated to collect email or phone when no application URL is available
 
 ## Known Issues
 - Chat interface not displaying responses from the Gemini API

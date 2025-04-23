@@ -73,3 +73,12 @@ This file documents the technologies used, development setup, technical constrai
   - Job posting chat interface
   - Job data extraction
   - Job data updates extraction
+
+## Job Posting Workflow Implementation
+- Conversational interface for job data collection
+- Web scraping integration for existing job postings
+- Structured data extraction from job descriptions
+- Contact information collection (email/phone) when no application URL is available
+- Data validation before submission
+- Database storage for job postings
+- Confirmation step before finalizing

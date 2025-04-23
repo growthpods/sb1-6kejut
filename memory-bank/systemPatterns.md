@@ -22,6 +22,7 @@ This file documents the system architecture, key technical decisions, design pat
 - Streaming API for real-time response handling
 - Stateful chat interface for job posting
 - Guardrails system for LLM behavior control
+- Workflow-driven conversation management
 
 ## Key Technical Decisions
 
@@ -41,6 +42,7 @@ This file documents the system architecture, key technical decisions, design pat
 - Streaming API for better user experience
 - Direct API integration without server-side proxy
 - System prompts with guardrails to ensure the LLM stays focused on job posting tasks
+- Workflow-driven conversation to collect all required information
 
 ## Design Patterns in Use
 
@@ -63,6 +65,7 @@ This file documents the system architecture, key technical decisions, design pat
 - Observer pattern for chat state management
 - Streaming pattern for real-time data processing
 - Guardrails pattern for LLM behavior control
+- Workflow pattern for conversation management
 
 ## Component Relationships
 
@@ -96,3 +99,12 @@ This file documents the system architecture, key technical decisions, design pat
   - Job posting chat interface
   - Job data extraction
   - Job data updates extraction
+
+## Job Posting Workflow
+- Help employers compose a complete job description through conversation
+- Parse information from existing job posting links
+- Collect all required information through conversation
+- Collect email or phone when no application URL is available
+- Ensure there's a way for students to apply (applicationUrl, email, or phone)
+- Summarize collected information and ask for confirmation
+- Store job posting data in the database
