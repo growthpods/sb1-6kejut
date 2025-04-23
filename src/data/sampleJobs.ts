@@ -15,8 +15,10 @@ export const SAMPLE_JOBS: Job[] = [
     ],
     type: 'Full-Time',
     level: 'Entry Level',
+    timeCommitment: 'Summer',
     applicants: 12,
     postedAt: new Date('2025-03-30'),
+    applicationUrl: 'https://www.innospec.com/careers/internships/',
     companyLogo: 'https://ui-avatars.com/api/?name=Innospec'
   },
   {
@@ -33,8 +35,10 @@ export const SAMPLE_JOBS: Job[] = [
     ],
     type: 'Full-Time',
     level: 'Entry Level',
+    timeCommitment: 'Summer',
     applicants: 24,
     postedAt: new Date('2025-04-01'),
+    applicationUrl: 'https://johnsonlawgroup.com/careers/internships/',
     companyLogo: 'https://ui-avatars.com/api/?name=Johnson'
   },
   {
@@ -51,8 +55,10 @@ export const SAMPLE_JOBS: Job[] = [
     ],
     type: 'Part-Time',
     level: 'Entry Level',
+    timeCommitment: 'Evening',
     applicants: 5,
     postedAt: new Date('2025-04-02'),
+    applicationUrl: 'https://teamindustry.com/apply-now/',
     companyLogo: 'https://ui-avatars.com/api/?name=Team'
   },
   {
@@ -69,8 +75,10 @@ export const SAMPLE_JOBS: Job[] = [
     ],
     type: 'Full-Time',
     level: 'Intermediate',
+    timeCommitment: 'Summer',
     applicants: 18,
     postedAt: new Date('2025-04-01'),
+    applicationUrl: 'https://www.creatorcamp.org/join-our-team',
     companyLogo: 'https://ui-avatars.com/api/?name=Creator'
   },
   {
@@ -87,8 +95,10 @@ export const SAMPLE_JOBS: Job[] = [
     ],
     type: 'Part-Time',
     level: 'Entry Level',
+    timeCommitment: 'Weekend',
     applicants: 35,
     postedAt: new Date('2025-03-25'),
+    applicationUrl: 'https://careers.cocacolaswb.com/internships',
     companyLogo: 'https://ui-avatars.com/api/?name=Coca-Cola'
   }
 ];

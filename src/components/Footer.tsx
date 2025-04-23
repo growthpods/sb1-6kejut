@@ -1,4 +1,5 @@
 import { Mail, Phone, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function Footer() {
   return (
@@ -28,19 +29,19 @@ export function Footer() {
             <h3 className="text-xl font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <a href="/jobs" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <Link to="/jobs" className="text-gray-400 hover:text-blue-400 transition-colors">
                   Find Jobs
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/about" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <Link to="/about" className="text-gray-400 hover:text-blue-400 transition-colors">
                   About Us
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/contact" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <Link to="/contact" className="text-gray-400 hover:text-blue-400 transition-colors">
                   Contact
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -49,19 +50,19 @@ export function Footer() {
             <h3 className="text-xl font-semibold mb-4">Legal</h3>
             <ul className="space-y-2">
               <li>
-                <a href="/privacy" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <Link to="/privacy" className="text-gray-400 hover:text-blue-400 transition-colors">
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/terms" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <Link to="/terms" className="text-gray-400 hover:text-blue-400 transition-colors">
                   Terms of Service
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/cookies" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <Link to="/cookies" className="text-gray-400 hover:text-blue-400 transition-colors">
                   Cookie Policy
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

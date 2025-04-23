@@ -1,0 +1,75 @@
+# Technical Context
+
+This file documents the technologies used, development setup, technical constraints, and dependencies.
+
+## Technologies Used
+
+### Frontend
+- React with TypeScript
+- Vite for build tooling
+- TailwindCSS for styling
+- React Router for navigation
+- Lucide React for icons
+
+### Backend
+- Supabase for authentication, database, and storage
+- PostgreSQL database (via Supabase)
+
+### APIs
+- Google Gemini API for AI-powered job posting assistance
+- Firecrawl for web scraping job listings
+
+### Deployment
+- Netlify for frontend hosting
+- Supabase for backend services
+
+## Development Setup
+- Node.js and npm for package management
+- TypeScript for type safety
+- ESLint for code linting
+- Prettier for code formatting
+- Vite for development server and building
+
+## Technical Constraints
+- Supabase RLS (Row Level Security) for data access control
+- Browser compatibility (modern browsers only)
+- Mobile responsiveness requirements
+- API rate limits (especially for Google Gemini API)
+
+## Dependencies
+- React and React DOM
+- React Router
+- TailwindCSS
+- Lucide React
+- Supabase JS client
+- @google/genai for Google Gemini API integration
+- dotenv for environment variable management
+- mime for content type handling
+
+## API Integration Details
+
+### Google Gemini API
+- Official package: @google/genai
+- API endpoint: https://generativelanguage.googleapis.com/v1beta
+- Model: gemini-2.0-flash
+- Authentication: API key
+- Request format: JSON with contents array containing parts with text
+- Response format: Streaming API with text chunks
+- Rate limits: Standard Google API rate limits apply
+- System prompts with guardrails to ensure the LLM stays focused on job posting tasks
+
+### Firecrawl API
+- Used for scraping job listings from external websites
+- Provides structured data extraction from web pages
+- Used in the job posting workflow to extract job details from URLs
+
+## LLM Guardrails Implementation
+- System prompts with clear role definition
+- Strict guidelines for staying on topic
+- Explicit instructions to avoid non-job-related topics
+- Specific formatting requirements for responses
+- Context about the platform's purpose and audience
+- Separate system prompts for different functions:
+  - Job posting chat interface
+  - Job data extraction
+  - Job data updates extraction

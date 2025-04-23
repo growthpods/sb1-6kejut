@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { X, SlidersHorizontal } from 'lucide-react';
+import { X, SlidersHorizontal, Clock } from 'lucide-react';
 
 const jobTypes = ['All', 'Full-Time', 'Part-Time', 'Remote'];
 const experienceLevels = ['All', 'Entry Level', 'Intermediate', 'Expert'];
+const timeCommitments = ['All', 'Evening', 'Weekend', 'Summer'];
 const datePosted = ['Any time', 'Past 24 hours', 'Past week', 'Past month'];
 
 interface JobFiltersProps {
   onFilterChange: (filters: {
     type: string;
     level: string;
+    timeCommitment?: string;
     datePosted: string;
   }) => void;
 }
@@ -17,24 +19,29 @@ export function JobFilters({ onFilterChange }: JobFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedType, setSelectedType] = useState('All');
   const [selectedLevel, setSelectedLevel] = useState('All');
+  const [selectedTimeCommitment, setSelectedTimeCommitment] = useState('All');
   const [selectedDate, setSelectedDate] = useState('Any time');
 
   const handleFilterChange = (
     type: string | null = null,
     level: string | null = null,
+    timeCommitment: string | null = null,
     date: string | null = null
   ) => {
     const newType = type ?? selectedType;
     const newLevel = level ?? selectedLevel;
+    const newTimeCommitment = timeCommitment ?? selectedTimeCommitment;
     const newDate = date ?? selectedDate;
 
     setSelectedType(newType);
     setSelectedLevel(newLevel);
+    setSelectedTimeCommitment(newTimeCommitment);
     setSelectedDate(newDate);
 
     onFilterChange({
       type: newType,
       level: newLevel,
+      timeCommitment: newTimeCommitment !== 'All' ? newTimeCommitment : undefined,
       datePosted: newDate,
     });
   };
@@ -61,7 +68,7 @@ export function JobFilters({ onFilterChange }: JobFiltersProps) {
                 name="jobType"
                 value={type}
                 checked={selectedType === type}
-                onChange={(e) => handleFilterChange(e.target.value, null, null)}
+                onChange={(e) => handleFilterChange(e.target.value, null, null, null)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500"
               />
               <span className="ml-2 text-gray-700">{type}</span>
@@ -80,10 +87,32 @@ export function JobFilters({ onFilterChange }: JobFiltersProps) {
                 name="experienceLevel"
                 value={level}
                 checked={selectedLevel === level}
-                onChange={(e) => handleFilterChange(null, e.target.value, null)}
+                onChange={(e) => handleFilterChange(null, e.target.value, null, null)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500"
               />
               <span className="ml-2 text-gray-700">{level}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+          <Clock className="w-5 h-5 mr-2 text-blue-600" />
+          Time Commitment
+        </h3>
+        <div className="space-y-2">
+          {timeCommitments.map((time) => (
+            <label key={time} className="flex items-center">
+              <input
+                type="radio"
+                name="timeCommitment"
+                value={time}
+                checked={selectedTimeCommitment === time}
+                onChange={(e) => handleFilterChange(null, null, e.target.value, null)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="ml-2 text-gray-700">{time}</span>
             </label>
           ))}
         </div>
@@ -99,7 +128,7 @@ export function JobFilters({ onFilterChange }: JobFiltersProps) {
                 name="datePosted"
                 value={date}
                 checked={selectedDate === date}
-                onChange={(e) => handleFilterChange(null, null, e.target.value)}
+                onChange={(e) => handleFilterChange(null, null, null, e.target.value)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500"
               />
               <span className="ml-2 text-gray-700">{date}</span>

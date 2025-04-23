@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner'; // Keep toast for potential errors outside chat flow
+import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { SendHorizonal } from 'lucide-react';
-import type { Job } from '../types'; // Import Job type
+import { SendHorizonal, Loader2 } from 'lucide-react';
+import type { Job } from '../types';
+import { getJobPostingService } from '../lib/jobPostingService';
 
 // Define message type
 interface ChatMessage {
@@ -15,214 +16,285 @@ interface ChatMessage {
 // Define possible chat states
 type ChatState =
   | 'idle' // Initial state, awaiting first input
-  | 'awaiting_title'
-  | 'awaiting_company'
-  | 'awaiting_location'
-  | 'awaiting_description'
-  | 'awaiting_requirements'
-  | 'awaiting_type'
-  | 'awaiting_level'
-  | 'awaiting_external_link'
-  | 'confirming_details'
-  | 'awaiting_confirmation'
-  | 'submitting'
-  | 'completed'
-  | 'error';
-  // Add more states as needed for link scraping, editing, etc.
+  | 'processing_url' // Processing a job URL with Firecrawl
+  | 'processing_text' // Processing job text with LLM
+  | 'collecting_info' // Collecting missing information
+  | 'confirming_details' // Confirming job details
+  | 'submitting' // Submitting to database
+  | 'completed' // Job posted successfully
+  | 'error'; // Error state
 
 export function PostJobPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false); // Used for bot thinking/submission
+  const [loading, setLoading] = useState(false);
+  const [processingUrl, setProcessingUrl] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { sender: 'bot', text: "Hello! Please paste a job description, a link to a job posting, or just tell me about the job you want to post." }
+    { sender: 'bot', text: "Hello! I'm your AI-powered job posting assistant. You can paste a job description, share a link to a job posting, or just tell me about the job you want to post." }
   ]);
   const [userInput, setUserInput] = useState('');
-  // State to store collected job data
   const [jobData, setJobData] = useState<Partial<Job>>({});
-  // State to track chat flow/current question
   const [chatState, setChatState] = useState<ChatState>('idle');
+  
+  // Get the job posting service
+  const jobPostingService = getJobPostingService();
 
-  // Helper to add bot message with delay
-  const addBotMessage = (text: string) => {
-    setLoading(true); // Show thinking indicator (optional)
+  // Add a bot message with optional delay
+  const addBotMessage = (text: string, delay = 500) => {
+    setLoading(true);
     setTimeout(() => {
       setMessages(prev => [...prev, { sender: 'bot', text }]);
-      setLoading(false); // Hide thinking indicator
-    }, 500); // Simulate thinking delay
+      setLoading(false);
+    }, delay);
   };
 
-  // Function to process user messages and advance chat state
+  // Process a job URL using Firecrawl
+  const processJobUrl = async (url: string) => {
+    try {
+      setProcessingUrl(true);
+      addBotMessage(`I'm analyzing the job posting at ${url}. This might take a moment...`, 0);
+      
+      // Process the URL with our service
+      const jobAnalysis = await jobPostingService.processJobUrl(url);
+      
+      // Update job data with the analysis results
+      const updatedJobData = {
+        ...jobData,
+        title: jobAnalysis.title,
+        company: jobAnalysis.company,
+        location: jobAnalysis.location,
+        description: jobAnalysis.description,
+        requirements: jobAnalysis.requirements,
+        type: normalizeJobType(jobAnalysis.type),
+        level: normalizeJobLevel(jobAnalysis.level),
+        timeCommitment: normalizeTimeCommitment(jobAnalysis.timeCommitment),
+        applicationUrl: jobAnalysis.applicationUrl,
+        externalLink: url
+      };
+      
+      setJobData(updatedJobData);
+      
+      // Determine missing fields
+      const missingFields = getMissingRequiredFields(updatedJobData);
+      
+      if (missingFields.length === 0) {
+        // All required fields are present, show confirmation
+        const confirmationText = formatJobConfirmation(updatedJobData);
+        addBotMessage(`I've successfully extracted all the job details!\n\n${confirmationText}\n\nDoes this look correct? (yes/no)`);
+        setChatState('confirming_details');
+      } else {
+        // Some fields are missing, ask for them
+        const missingFieldsText = missingFields.join(', ');
+        addBotMessage(`I've extracted some information from the job posting, but I still need a few details: ${missingFieldsText}.\n\nLet's start with: What is the ${missingFields[0]}?`);
+        setChatState('collecting_info');
+      }
+    } catch (error) {
+      console.error('Error processing job URL:', error);
+      addBotMessage("I had trouble extracting information from that URL. Let's proceed manually. What is the job title?");
+      setChatState('collecting_info');
+    } finally {
+      setProcessingUrl(false);
+    }
+  };
+
+  // Process a job description using LLM
+  const processJobDescription = async (description: string) => {
+    try {
+      console.log('Processing job description:', description.substring(0, 100) + '...');
+      setLoading(true);
+      addBotMessage("I'm analyzing the job description you provided. This will just take a moment...", 0);
+      
+      // Process the description with our service
+      console.log('Calling jobPostingService.processJobDescription');
+      const jobAnalysis = await jobPostingService.processJobDescription(description);
+      console.log('Job analysis result:', jobAnalysis);
+      
+      // Update job data with the analysis results
+      const updatedJobData = {
+        ...jobData,
+        title: jobAnalysis.title,
+        company: jobAnalysis.company,
+        location: jobAnalysis.location,
+        description: jobAnalysis.description || description,
+        requirements: jobAnalysis.requirements,
+        type: normalizeJobType(jobAnalysis.type),
+        level: normalizeJobLevel(jobAnalysis.level),
+        timeCommitment: normalizeTimeCommitment(jobAnalysis.timeCommitment),
+        applicationUrl: jobAnalysis.applicationUrl
+      };
+      
+      setJobData(updatedJobData);
+      
+      // Determine missing fields
+      const missingFields = getMissingRequiredFields(updatedJobData);
+      
+      if (missingFields.length === 0) {
+        // All required fields are present, show confirmation
+        const confirmationText = formatJobConfirmation(updatedJobData);
+        addBotMessage(`I've successfully extracted all the job details!\n\n${confirmationText}\n\nDoes this look correct? (yes/no)`);
+        setChatState('confirming_details');
+      } else {
+        // Some fields are missing, ask for them
+        const missingFieldsText = missingFields.join(', ');
+        addBotMessage(`I've extracted some information from your description, but I still need a few details: ${missingFieldsText}.\n\nLet's start with: What is the ${missingFields[0]}?`);
+        setChatState('collecting_info');
+      }
+    } catch (error) {
+      console.error('Error processing job description:', error);
+      addBotMessage("I had trouble analyzing that description. Let's proceed step by step. What is the job title?");
+      setChatState('collecting_info');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Process user messages using the LLM
   const processUserMessage = async (messageText: string) => {
-    let nextState: ChatState = chatState;
-    let botResponse = "I'm not sure how to handle that yet. Can you try again?"; // Default fallback
-
-    // Trim message text for processing
-    const processedText = messageText.trim();
-
-    switch (chatState) {
-      case 'idle':
-        // Basic URL check (improve as needed)
+    setLoading(true);
+    console.log('Processing user message:', messageText);
+    
+    try {
+      const processedText = messageText.trim();
+      console.log('Current chat state:', chatState);
+      
+      // Handle initial input (URL or description)
+      if (chatState === 'idle') {
         if (processedText.startsWith('http://') || processedText.startsWith('https://')) {
-          botResponse = "Okay, I see a link. I'll try to scrape the details... (Note: Scraping not implemented yet). For now, let's proceed manually. What is the job title?";
-          // TODO: Implement actual scraping with Firecrawl here
-          // If scraping successful, populate jobData and jump to 'confirming_details'
-          // If scraping fails, ask for manual input
-          setJobData({ externalLink: processedText }); // Store the link using camelCase
-          nextState = 'awaiting_title';
+          // Process as URL
+          setChatState('processing_url');
+          await processJobUrl(processedText);
         } else {
-          // Assume it's a description or initial prompt
-          botResponse = "Thanks! Let's get started. What is the job title?";
-          setJobData({ description: processedText }); // Store initial text as description
-          nextState = 'awaiting_title';
+          // Process as description or initial prompt
+          setChatState('processing_text');
+          await processJobDescription(processedText);
         }
-        break;
-
-      case 'awaiting_title':
-        setJobData(prev => ({ ...prev, title: processedText }));
-        botResponse = "Got it. What is the company name?";
-        nextState = 'awaiting_company';
-        break;
-
-      case 'awaiting_company':
-        setJobData(prev => ({ ...prev, company: processedText }));
-        botResponse = "Great. Where is the job located? (e.g., City, ST or Remote)";
-        nextState = 'awaiting_location';
-        break;
-
-      case 'awaiting_location':
-         setJobData(prev => ({ ...prev, location: processedText }));
-         // If description wasn't provided initially (e.g., user started with link/title), ask for it now
-         if (!jobData.description) {
-            botResponse = "Okay. Could you provide a description for the job?";
-            nextState = 'awaiting_description';
-         } else {
-            // Otherwise, move to requirements
-            botResponse = "Thanks. What are the key requirements? (Please list them separated by commas)";
-            nextState = 'awaiting_requirements';
-         }
-         break;
-
-       case 'awaiting_description':
-         setJobData(prev => ({ ...prev, description: processedText }));
-         botResponse = "Perfect. What are the key requirements? (Please list them separated by commas)";
-         nextState = 'awaiting_requirements';
-         break;
-
-       case 'awaiting_requirements':
-         // Simple comma split, trim whitespace
-         const requirements = processedText.split(',').map(r => r.trim()).filter(Boolean);
-         setJobData(prev => ({ ...prev, requirements }));
-         botResponse = "Understood. What is the job type? (e.g., Full-Time, Part-Time, Internship, Contract)";
-         // TODO: Could offer options here
-         nextState = 'awaiting_type';
-         break;
-
-       case 'awaiting_type':
-         // Basic validation could be added
-         setJobData(prev => ({ ...prev, type: processedText as Job['type'] })); // Cast for now
-         botResponse = "And the experience level required? (e.g., Entry Level, Intermediate, Expert)";
-         // TODO: Could offer options
-         nextState = 'awaiting_level';
-         break;
-
-       case 'awaiting_level':
-         setJobData(prev => ({ ...prev, level: processedText as Job['level'] })); // Cast for now
-         // If external link wasn't provided initially, ask now
-         if (!jobData.externalLink) { // Use camelCase
-            botResponse = "Do you have an external link for the full job posting? (Optional, type 'none' if not)";
-            nextState = 'awaiting_external_link';
-         } else {
-            // Skip to confirmation if link was already provided
-            const currentJobData = { ...jobData, level: processedText as Job['level'] }; // Ensure latest level is included
-            const confirmationText = `Okay, here's what I have:\n\n` +
-              `**Title:** ${currentJobData.title}\n` +
-              `**Company:** ${currentJobData.company}\n` +
-              `**Location:** ${currentJobData.location}\n` +
-              `**Type:** ${currentJobData.type}\n` +
-              `**Level:** ${currentJobData.level}\n` +
-              `**Requirements:** ${currentJobData.requirements?.join(', ') || 'N/A'}\n` +
-              `**Link:** ${currentJobData.externalLink || 'N/A'}\n\n` + // Use camelCase
-              `**Description:**\n${currentJobData.description}\n\n` +
-              `Does this look correct? (yes/no)`;
-            botResponse = confirmationText;
-            nextState = 'awaiting_confirmation';
-         }
-         break;
-
-       case 'awaiting_external_link':
-         const link = processedText.toLowerCase() === 'none' ? undefined : processedText;
-         const currentJobDataWithLink = { ...jobData, externalLink: link }; // Ensure latest link is included (use camelCase)
-         setJobData(currentJobDataWithLink); // Update state
-         // Format collected data for confirmation
-         const confirmationText = `Okay, here's what I have:\n\n` +
-           `**Title:** ${currentJobDataWithLink.title}\n` +
-           `**Company:** ${currentJobDataWithLink.company}\n` +
-           `**Location:** ${currentJobDataWithLink.location}\n` +
-           `**Type:** ${currentJobDataWithLink.type}\n` +
-           `**Level:** ${currentJobDataWithLink.level}\n` +
-           `**Requirements:** ${currentJobDataWithLink.requirements?.join(', ') || 'N/A'}\n` +
-           `**Link:** ${currentJobDataWithLink.externalLink || 'N/A'}\n\n` + // Use camelCase
-           `**Description:**\n${currentJobDataWithLink.description}\n\n` +
-           `Does this look correct? (yes/no)`;
-         botResponse = confirmationText;
-         nextState = 'awaiting_confirmation';
-         break;
-
-       case 'awaiting_confirmation':
-         const confirmation = processedText.toLowerCase();
-         if (confirmation === 'yes' || confirmation === 'y') {
-           botResponse = "Great! Posting the job now...";
-           nextState = 'submitting';
-           // --- Trigger actual submission ---
-           await submitJob();
-           // submitJob will handle setting 'completed' or 'error' state and adding final bot message
-         } else {
-           botResponse = "Okay, what needs to be changed? (e.g., 'change title to Senior Developer', or paste the full corrected details). For now, we'll restart the process.";
-           // TODO: Implement logic to handle change requests - complex!
-           nextState = 'idle'; // Reset for now, needs refinement
-           setJobData({}); // Clear collected data
-         }
-         break;
-
-      // Add cases for 'submitting', 'completed', 'error' if needed for specific messages
-
-      default:
-        console.warn(`Unhandled chat state: ${chatState}`);
-        botResponse = "Sorry, I got a bit confused. Let's try starting over. Please paste the job details or link.";
-        nextState = 'idle';
-        setJobData({}); // Reset job data
+        return;
+      }
+      
+      // For all other states, use the LLM to generate responses
+      const { response, updatedJobData } = await jobPostingService.generateChatResponse(
+        processedText,
+        messages,
+        jobData
+      );
+      
+      // Update job data with any changes from the LLM
+      setJobData(updatedJobData);
+      
+      // Add the bot response
+      addBotMessage(response, 0);
+      
+      // Check if we need to change state based on the response
+      if (response.toLowerCase().includes('does this look correct') || 
+          response.toLowerCase().includes('is this information correct')) {
+        setChatState('confirming_details');
+      } else if (processedText.toLowerCase() === 'yes' && chatState === 'confirming_details') {
+        setChatState('submitting');
+        await submitJob();
+      }
+    } catch (error) {
+      console.error('Error processing message:', error);
+      addBotMessage("I'm sorry, I encountered an error. Let's try again. Could you please repeat your last message?");
+    } finally {
+      setLoading(false);
     }
-
-    // Only add bot message here if not submitting (submitJob handles its own messages)
-    if (nextState !== 'submitting') {
-       addBotMessage(botResponse);
-    }
-    setChatState(nextState);
   };
 
+  // Helper functions to normalize job data to match expected types
+  const normalizeJobType = (type?: string): 'Full-Time' | 'Part-Time' | 'Remote' | undefined => {
+    if (!type) return undefined;
+    
+    const lowerType = type.toLowerCase();
+    if (lowerType.includes('full') || lowerType.includes('full time') || lowerType.includes('fulltime')) {
+      return 'Full-Time';
+    } else if (lowerType.includes('part') || lowerType.includes('part time') || lowerType.includes('parttime')) {
+      return 'Part-Time';
+    } else if (lowerType.includes('remote')) {
+      return 'Remote';
+    }
+    
+    // Default to Full-Time if we can't determine
+    return 'Full-Time';
+  };
+  
+  const normalizeJobLevel = (level?: string): 'Entry Level' | 'Intermediate' | 'Expert' | undefined => {
+    if (!level) return undefined;
+    
+    const lowerLevel = level.toLowerCase();
+    if (lowerLevel.includes('entry') || lowerLevel.includes('junior') || lowerLevel.includes('beginner')) {
+      return 'Entry Level';
+    } else if (lowerLevel.includes('mid') || lowerLevel.includes('intermediate')) {
+      return 'Intermediate';
+    } else if (lowerLevel.includes('senior') || lowerLevel.includes('expert') || lowerLevel.includes('advanced')) {
+      return 'Expert';
+    }
+    
+    // Default to Entry Level if we can't determine
+    return 'Entry Level';
+  };
+  
+  const normalizeTimeCommitment = (commitment?: string): 'Evening' | 'Weekend' | 'Summer' | undefined => {
+    if (!commitment) return undefined;
+    
+    const lowerCommitment = commitment.toLowerCase();
+    if (lowerCommitment.includes('evening')) {
+      return 'Evening';
+    } else if (lowerCommitment.includes('weekend')) {
+      return 'Weekend';
+    } else if (lowerCommitment.includes('summer')) {
+      return 'Summer';
+    }
+    
+    // Default to undefined if we can't determine
+    return undefined;
+  };
 
-  // Function to handle the actual Supabase submission
+  // Helper function to get missing required fields
+  const getMissingRequiredFields = (data: Partial<Job>): string[] => {
+    const requiredFields: (keyof Job)[] = [
+      'title', 'company', 'location', 'description', 
+      'type', 'level', 'timeCommitment', 'applicationUrl'
+    ];
+    
+    return requiredFields.filter(field => !data[field]);
+  };
+
+  // Helper function to format job confirmation message
+  const formatJobConfirmation = (data: Partial<Job>): string => {
+    return `**Title:** ${data.title || 'N/A'}\n` +
+      `**Company:** ${data.company || 'N/A'}\n` +
+      `**Location:** ${data.location || 'N/A'}\n` +
+      `**Type:** ${data.type || 'N/A'}\n` +
+      `**Level:** ${data.level || 'N/A'}\n` +
+      `**Time Commitment:** ${data.timeCommitment || 'N/A'}\n` +
+      `**Requirements:** ${data.requirements?.join(', ') || 'N/A'}\n` +
+      `**Application URL:** ${data.applicationUrl || 'N/A'}\n` +
+      `**Link:** ${data.externalLink || 'N/A'}\n\n` +
+      `**Description:**\n${data.description || 'N/A'}`;
+  };
+
+  // Function to submit the job to Supabase
   const submitJob = async () => {
     if (!user) {
       addBotMessage("Error: You must be logged in to post a job.");
       setChatState('error');
-      setLoading(false); // Ensure loading stops on auth error
       return;
     }
-    // Check required fields before attempting submission
-    const requiredFields: (keyof Job)[] = ['title', 'company', 'location', 'description', 'type', 'level'];
+    
+    // Check required fields
+    const requiredFields: (keyof Job)[] = [
+      'title', 'company', 'location', 'description', 
+      'type', 'level', 'timeCommitment', 'applicationUrl'
+    ];
     const missingFields = requiredFields.filter(field => !jobData[field]);
 
     if (missingFields.length > 0) {
-       addBotMessage(`Error: Missing required job details: ${missingFields.join(', ')}. Let's try again.`);
-       setChatState('idle'); // Reset to start over
-       setJobData({});
-       setLoading(false); // Ensure loading stops
-       return;
+      addBotMessage(`Error: Missing required job details: ${missingFields.join(', ')}. Let's try again.`);
+      setChatState('collecting_info');
+      return;
     }
 
-    setLoading(true); // Indicate submission process
+    setLoading(true);
 
     try {
       // Prepare data for Supabase (using snake_case for column names)
@@ -233,51 +305,63 @@ export function PostJobPage() {
         description: jobData.description!,
         type: jobData.type!,
         level: jobData.level!,
-        external_link: jobData.externalLink || null, // Convert camelCase to snake_case for DB
+        time_commitment: jobData.timeCommitment!,
+        application_url: jobData.applicationUrl!,
+        external_link: jobData.externalLink || null,
         employer_id: user.id,
         requirements: jobData.requirements || [],
-        // Add other fields like applicants, posted_at if needed (defaults might be set in DB)
+        posted_at: new Date().toISOString(),
+        applicants: 0
       };
 
       const { error } = await supabase.from('jobs').insert(dataToInsert);
 
       if (error) throw error;
 
-      addBotMessage("Job posted successfully! Redirecting you to the dashboard.");
+      addBotMessage("🎉 Job posted successfully! Your job listing is now live and visible to students. I'll redirect you to the dashboard in a moment.");
       setChatState('completed');
-      setTimeout(() => navigate('/dashboard'), 2000); // Redirect after a short delay
-
+      
+      // Redirect after a short delay
+      setTimeout(() => navigate('/dashboard'), 2500);
     } catch (error: any) {
       console.error("Supabase submission error:", error);
-      // Check for specific errors like RLS if needed
+      
       if (error.code === '42501') { // RLS violation code
-         addBotMessage(`Error posting job: Permission denied. Please ensure you have the correct role/permissions.`);
+        addBotMessage(`Error posting job: Permission denied. Please ensure you have the correct role/permissions.`);
       } else {
-         addBotMessage(`Error posting job: ${error.message}. Please try again later.`);
+        addBotMessage(`Error posting job: ${error.message}. Please try again later.`);
       }
+      
       setChatState('error');
     } finally {
-      setLoading(false); // Ensure loading stops regardless of outcome
+      setLoading(false);
     }
   };
 
-
-  // Handle user message submission
+  // Handle sending a message
   const handleSendMessage = () => {
-    if (!userInput.trim() || loading) return; // Prevent sending empty messages or while bot is thinking/submitting
+    if (!userInput.trim() || loading || processingUrl) return;
 
     const newUserMessage: ChatMessage = { sender: 'user', text: userInput };
-    const currentInput = userInput; // Capture input before clearing
+    const currentInput = userInput;
+    
     setMessages(prev => [...prev, newUserMessage]);
     setUserInput('');
-
-    // Process the message using the state machine logic
+    
     processUserMessage(currentInput);
   };
 
   return (
-    <div className="container mx-auto px-4 py-12 flex flex-col h-[calc(100vh-150px)]"> {/* Adjust height as needed */}
-      <h1 className="text-3xl font-bold mb-6 text-center">Post a Job via Chat</h1>
+    <div className="container mx-auto px-4 py-12 flex flex-col h-[calc(100vh-150px)]">
+      <h1 className="text-3xl font-bold mb-6 text-center">AI-Powered Job Posting</h1>
+      
+      {/* Environment indicator for API key */}
+      {!import.meta.env.VITE_OPENROUTER_API_KEY && (
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
+          <p className="font-bold">Note:</p>
+          <p>OpenRouter API key not found. Add VITE_OPENROUTER_API_KEY to your .env file for AI-powered job posting.</p>
+        </div>
+      )}
 
       {/* Chat Message Display Area */}
       <div className="flex-grow overflow-y-auto mb-4 p-4 border rounded-lg bg-gray-50 space-y-4">
@@ -290,21 +374,36 @@ export function PostJobPage() {
                   : 'bg-white text-gray-800'
               }`}
             >
-              {/* Basic rendering, consider markdown support later */}
-              {/* Replace newline characters with <br /> for display */}
+              {/* Render message with markdown-like formatting */}
               {msg.text.split('\n').map((line, i) => (
-                <span key={i}>{line}{i === msg.text.split('\n').length - 1 ? '' : <br />}</span>
+                <span key={i}>
+                  {line.startsWith('**') && line.endsWith('**') 
+                    ? <strong>{line.substring(2, line.length - 2)}</strong> 
+                    : line}
+                  {i === msg.text.split('\n').length - 1 ? '' : <br />}
+                </span>
               ))}
             </div>
           </div>
         ))}
-        {/* Loading indicator */}
-        {loading && chatState !== 'submitting' && (
-           <div className="flex justify-start">
-             <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow bg-white text-gray-500 italic">
-               Thinking...
-             </div>
-           </div>
+        
+        {/* Loading indicators */}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow bg-white text-gray-500 italic flex items-center">
+              <Loader2 className="animate-spin mr-2" size={16} />
+              Thinking...
+            </div>
+          </div>
+        )}
+        
+        {processingUrl && (
+          <div className="flex justify-start">
+            <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow bg-white text-gray-500 italic flex items-center">
+              <Loader2 className="animate-spin mr-2" size={16} />
+              Analyzing job posting...
+            </div>
+          </div>
         )}
       </div>
 
@@ -322,11 +421,11 @@ export function PostJobPage() {
               handleSendMessage();
             }
           }}
-          disabled={loading || chatState === 'completed' || chatState === 'submitting'} // Disable input when loading/done
+          disabled={loading || processingUrl || chatState === 'completed' || chatState === 'submitting'}
         />
         <button
           onClick={handleSendMessage}
-          disabled={loading || !userInput.trim() || chatState === 'completed' || chatState === 'submitting'}
+          disabled={loading || processingUrl || !userInput.trim() || chatState === 'completed' || chatState === 'submitting'}
           className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
         >
           <SendHorizonal size={20} />

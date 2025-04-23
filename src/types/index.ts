@@ -7,9 +7,11 @@ export interface Job {
   requirements: string[];
   type: 'Full-Time' | 'Part-Time' | 'Remote';
   level: 'Entry Level' | 'Intermediate' | 'Expert';
+  timeCommitment?: 'Evening' | 'Weekend' | 'Summer';
   applicants: number;
   postedAt: Date;
   externalLink?: string;
+  applicationUrl?: string;
   companyLogo?: string;
 }
 

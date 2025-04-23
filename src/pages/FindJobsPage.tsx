@@ -11,8 +11,19 @@ export function FindJobsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
-  // Added filters state
-  const [filters, setFilters] = useState<{ type: string; level: string; datePosted: string }>({ type: '', level: '', datePosted: '' });
+  
+  // Filters state including timeCommitment
+  const [filters, setFilters] = useState<{ 
+    type: string; 
+    level: string; 
+    timeCommitment?: string;
+    datePosted: string 
+  }>({ 
+    type: '', 
+    level: '', 
+    timeCommitment: undefined,
+    datePosted: '' 
+  });
 
   // Fetch jobs from JSON file
   useEffect(() => {
@@ -59,6 +70,10 @@ export function FindJobsPage() {
 
       // Level filter
       const matchesLevel = !filters.level || job.level === filters.level;
+      
+      // Time Commitment filter
+      const matchesTimeCommitment = !filters.timeCommitment || 
+        job.timeCommitment === filters.timeCommitment;
 
       // Date Posted filter (Example: last 7 days) - Requires more robust date logic
       const matchesDate = !filters.datePosted || (() => {
@@ -74,8 +89,8 @@ export function FindJobsPage() {
         return true; // Default case if filter value is unexpected
       })();
 
-
-      return matchesSearch && matchesLocation && matchesType && matchesLevel && matchesDate;
+      return matchesSearch && matchesLocation && matchesType && 
+             matchesLevel && matchesTimeCommitment && matchesDate;
     });
   }, [allJobs, searchQuery, location, filters]);
 
@@ -83,25 +98,35 @@ export function FindJobsPage() {
   const handleSearch = (query: string, loc: string) => {
     setSearchQuery(query);
     setLocation(loc);
-    setSearchQuery(query);
-    setLocation(loc);
   };
 
-  const handleFilterChange = (newFilters: { type: string; level: string; datePosted: string }) => {
+  const handleFilterChange = (newFilters: { 
+    type: string; 
+    level: string; 
+    timeCommitment?: string;
+    datePosted: string 
+  }) => {
     setFilters(newFilters); // Update filters state
   };
 
   if (loading) {
-    return <div className="container mx-auto px-4 py-12">Loading...</div>;
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <span className="ml-2">Loading jobs...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-black text-white py-20">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl font-bold mb-6">Find Your Perfect Internship</h1>
+          <h1 className="text-5xl font-bold mb-6">Find Your Perfect Job</h1>
           <p className="text-xl text-gray-300 mb-12">
-            Browse through thousands of internship opportunities
+            Browse through flexible jobs for evenings, weekends, or summer breaks
           </p>
           <SearchBar onSearch={handleSearch} />
         </div>
@@ -117,31 +142,28 @@ export function FindJobsPage() {
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-2xl font-semibold">
                 Available Positions
-                {/* Updated job count */}
                 <span className="text-gray-500 text-lg ml-2">
                   ({filteredJobs.length})
                 </span>
               </h2>
-              {/* TODO: Implement sorting logic if needed */}
               <select className="px-4 py-2 border rounded-lg">
                 <option>Most recent</option>
                 <option>Most relevant</option>
               </select>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Map over filtered jobs */}
-              {filteredJobs.map((job) => (
-                <Link key={job.id} to={`/jobs/${job.id}`}>
-                  <JobCard job={job} />
-                </Link>
-              ))}
-            </div>
-
-            {/* Check filtered jobs length */}
-            {filteredJobs.length === 0 && !loading && (
-              <div className="text-center py-12">
-                <p className="text-gray-500">No jobs found matching your criteria</p>
+            {filteredJobs.length > 0 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {filteredJobs.map((job) => (
+                  <Link key={job.id} to={`/jobs/${job.id}`}>
+                    <JobCard job={job} />
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-white rounded-lg shadow-sm p-8">
+                <p className="text-gray-500 text-lg">No jobs found matching your criteria</p>
+                <p className="text-gray-400 mt-2">Try adjusting your filters or search terms</p>
               </div>
             )}
           </div>

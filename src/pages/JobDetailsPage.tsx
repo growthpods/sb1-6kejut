@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom'; // Removed useNavigate as it's unused now
-import { Briefcase, MapPin, Calendar, Check } from 'lucide-react'; // Re-added Calendar and Check
-// import { toast } from 'sonner'; // Removed unused toast
+import { useParams } from 'react-router-dom';
+import { Briefcase, MapPin, Calendar, Check, Clock, ExternalLink } from 'lucide-react';
 import type { Job } from '../types';
-import { supabase } from '../lib/supabase'; // Import supabase
+import { supabase } from '../lib/supabase';
 
 export function JobDetailsPage() {
   const { id } = useParams();
@@ -74,57 +73,76 @@ export function JobDetailsPage() {
             <div className="flex gap-6">
               <img
                 src={job.companyLogo || `https://ui-avatars.com/api/?name=${job.company}`}
-                alt={`${job.company} logo`} // Improved alt text
-                className="w-16 h-16 rounded-lg object-contain" // Added object-contain
+                alt={`${job.company} logo`}
+                className="w-16 h-16 rounded-lg object-contain"
               />
               <div>
                 <h1 className="text-3xl font-bold">{job.title}</h1>
                 <p className="text-xl text-gray-600 mt-1">{job.company}</p>
+                
+                {/* Time Commitment Badge */}
+                {job.timeCommitment && (
+                  <div className="mt-2">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                      <Clock className="w-4 h-4 mr-1" />
+                      {job.timeCommitment} Availability
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
-            {/* Use external link if available, otherwise maybe hide or disable */}
-            {job.externalLink ? (
+            
+            {/* Use application URL if available, fall back to external link */}
+            {job.applicationUrl ? (
               <a
-                href={job.externalLink}
-                target="_blank" // Open in new tab
-                rel="noopener noreferrer" // Security best practice
-                className="px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                href={job.applicationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
               >
                 Apply Now
+                <ExternalLink className="w-4 h-4 ml-2" />
+              </a>
+            ) : job.externalLink ? (
+              <a
+                href={job.externalLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              >
+                View Job
+                <ExternalLink className="w-4 h-4 ml-2" />
               </a>
             ) : (
-               <span className="px-6 py-3 rounded-lg bg-gray-400 text-white cursor-not-allowed">
-                 Apply Link Unavailable
-               </span>
-              // Alternative: Fallback mailto link (less ideal)
-              /* <a
-                href={`mailto:apply@${job.company.toLowerCase().replace(/\s+/g, '')}.com`}
-                className="px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-              >
-                Apply Now (Email)
-              </a> */
+              <span className="px-6 py-3 rounded-lg bg-gray-400 text-white cursor-not-allowed">
+                Apply Link Unavailable
+              </span>
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-6 mt-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
             <div className="flex items-center gap-2">
               <Briefcase className="w-5 h-5 text-gray-400" />
-              <span>{job.type || 'N/A'}</span> {/* Add fallback */}
+              <span>{job.type || 'N/A'}</span>
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-gray-400" />
-              <span>{job.location || 'N/A'}</span> {/* Add fallback */}
+              <span>{job.location || 'N/A'}</span>
             </div>
-             {/* Optionally display posted date */}
-             <div className="flex items-center gap-2">
-               <Calendar className="w-5 h-5 text-gray-400" /> {/* Re-add Calendar icon */}
-               <span>Posted: {job.postedAt.toLocaleDateString()}</span>
-             </div>
-             {/* Optionally display level */}
-             <div className="flex items-center gap-2">
-               <Check className="w-5 h-5 text-gray-400" /> {/* Re-add Check icon */}
-               <span>{job.level || 'N/A'}</span> {/* Add fallback */}
-             </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-gray-400" />
+              <span>Posted: {job.postedAt.toLocaleDateString()}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check className="w-5 h-5 text-gray-400" />
+              <span>{job.level || 'N/A'}</span>
+            </div>
+            {job.timeCommitment && (
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-green-500" />
+                <span className="font-medium text-green-700">{job.timeCommitment} Availability</span>
+              </div>
+            )}
           </div>
 
           <div className="mt-8">
