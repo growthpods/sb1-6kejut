@@ -23,6 +23,7 @@ This file documents the system architecture, key technical decisions, design pat
 - Stateful chat interface for job posting
 - Guardrails system for LLM behavior control
 - Workflow-driven conversation management
+- Task-specific system prompts
 
 ## Key Technical Decisions
 
@@ -41,8 +42,9 @@ This file documents the system architecture, key technical decisions, design pat
 - Official @google/genai package for API integration
 - Streaming API for better user experience
 - Direct API integration without server-side proxy
-- System prompts with guardrails to ensure the LLM stays focused on job posting tasks
+- System prompts with strict guardrails to ensure the LLM stays focused on job posting tasks only
 - Workflow-driven conversation to collect all required information
+- Strict two-task limitation (job description crafting and job link parsing only)
 
 ## Design Patterns in Use
 
@@ -66,6 +68,7 @@ This file documents the system architecture, key technical decisions, design pat
 - Streaming pattern for real-time data processing
 - Guardrails pattern for LLM behavior control
 - Workflow pattern for conversation management
+- Task-specific system prompts pattern
 
 ## Component Relationships
 
@@ -99,6 +102,8 @@ This file documents the system architecture, key technical decisions, design pat
   - Job posting chat interface
   - Job data extraction
   - Job data updates extraction
+- Explicit rejection responses for off-topic queries
+- Strict two-task limitation (job description crafting and job link parsing only)
 
 ## Job Posting Workflow
 - Help employers compose a complete job description through conversation
@@ -108,3 +113,4 @@ This file documents the system architecture, key technical decisions, design pat
 - Ensure there's a way for students to apply (applicationUrl, email, or phone)
 - Summarize collected information and ask for confirmation
 - Store job posting data in the database
+- Redirect off-topic queries back to job posting tasks

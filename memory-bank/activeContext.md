@@ -6,7 +6,7 @@ This file tracks the current work focus. Please update with recent changes, next
 - Implementing the job posting page with AI assistance
 - Integrating Google Gemini API for LLM capabilities
 - Developing the chat interface for job posting
-- Adding guardrails to ensure the LLM stays focused on job posting tasks
+- Adding strict guardrails to ensure the LLM stays focused on job posting tasks only
 - Enhancing the job posting workflow to collect contact information
 
 ## Recent Changes
@@ -15,10 +15,12 @@ This file tracks the current work focus. Please update with recent changes, next
 - Implemented the official @google/genai package for API integration
 - Created and executed a test script that successfully interacts with the Gemini API
 - Updated the Gemini client to use the streaming API for better response handling
-- Added strict guardrails to system prompts to ensure the LLM stays focused on job posting tasks
+- Added strict guardrails to system prompts to ensure the LLM stays focused on job posting tasks only
 - Enhanced system prompts with clear guidelines and restrictions
 - Updated the job posting workflow to collect email or phone when no application URL is available
 - Added detailed workflow instructions to the system prompt
+- Strengthened guardrails to strictly limit LLM to job posting tasks only
+- Added explicit rejection responses for off-topic queries
 
 ## Next Steps
 - Debug the chat interface to properly display responses from the Gemini API
@@ -33,5 +35,6 @@ This file tracks the current work focus. Please update with recent changes, next
 - Using the official @google/genai package for API integration
 - Using the streaming API for better response handling
 - Using the gemini-2.0-flash model for optimal performance
-- Adding strict guardrails to system prompts to ensure the LLM stays focused on job posting tasks
+- Adding strict guardrails to system prompts to ensure the LLM stays focused on job posting tasks only
 - Collecting email or phone when no application URL is available
+- Implementing a strict two-task limitation (job description crafting and job link parsing only)

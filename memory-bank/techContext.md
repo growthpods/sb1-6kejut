@@ -56,7 +56,7 @@ This file documents the technologies used, development setup, technical constrai
 - Request format: JSON with contents array containing parts with text
 - Response format: Streaming API with text chunks
 - Rate limits: Standard Google API rate limits apply
-- System prompts with guardrails to ensure the LLM stays focused on job posting tasks
+- System prompts with strict guardrails to ensure the LLM stays focused on job posting tasks only
 
 ### Firecrawl API
 - Used for scraping job listings from external websites
@@ -73,6 +73,9 @@ This file documents the technologies used, development setup, technical constrai
   - Job posting chat interface
   - Job data extraction
   - Job data updates extraction
+- Explicit rejection responses for off-topic queries
+- Strict two-task limitation (job description crafting and job link parsing only)
+- Standardized rejection message for off-topic queries
 
 ## Job Posting Workflow Implementation
 - Conversational interface for job data collection
@@ -82,3 +85,4 @@ This file documents the technologies used, development setup, technical constrai
 - Data validation before submission
 - Database storage for job postings
 - Confirmation step before finalizing
+- Redirection mechanism for off-topic queries

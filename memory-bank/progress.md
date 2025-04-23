@@ -9,8 +9,9 @@ This file tracks what works, what's left to build, current status, and known iss
 - Job posting page with AI assistance (using Google Gemini API)
 - Direct API integration with Google Gemini for job description generation
 - Streaming API implementation for better response handling
-- System prompts with guardrails to ensure the LLM stays focused on job posting tasks
+- System prompts with strict guardrails to ensure the LLM stays focused on job posting tasks only
 - Enhanced job posting workflow to collect contact information
+- Explicit rejection responses for off-topic queries
 
 ## What's Left to Build
 - Debug the chat interface to properly display responses from the Gemini API
@@ -28,8 +29,9 @@ This file tracks what works, what's left to build, current status, and known iss
 - The official @google/genai package is integrated and working
 - The chat interface for job posting needs debugging to display API responses
 - The API key is configured and working correctly
-- System prompts have been enhanced with guardrails to ensure the LLM stays focused on job posting tasks
+- System prompts have been enhanced with strict guardrails to ensure the LLM stays focused on job posting tasks only
 - Job posting workflow has been updated to collect email or phone when no application URL is available
+- Strict two-task limitation implemented (job description crafting and job link parsing only)
 
 ## Known Issues
 - Chat interface not displaying responses from the Gemini API
