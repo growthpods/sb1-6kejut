@@ -1,4 +1,4 @@
-import { Heart, MapPin, Clock, ExternalLink } from 'lucide-react';
+import { Heart, MapPin, Clock, ExternalLink, Globe } from 'lucide-react';
 import type { Job } from '../types';
 
 interface JobCardProps {
@@ -60,6 +60,13 @@ export function JobCard({ job, showApplyButton = true }: JobCardProps) {
           <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm flex items-center">
             <Clock className="w-3 h-3 mr-1" />
             {job.timeCommitment}
+          </span>
+        )}
+        {/* Show source badge if from Google */}
+        {job.source === 'google' && (
+          <span className="px-3 py-1 bg-red-50 text-red-700 rounded-full text-sm flex items-center">
+            <Globe className="w-3 h-3 mr-1" />
+            Google Jobs
           </span>
         )}
       </div>

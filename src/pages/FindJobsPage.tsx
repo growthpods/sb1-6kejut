@@ -12,9 +12,11 @@ export function FindJobsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
-  const [useGoogleJobs, setUseGoogleJobs] = useState(false); // Toggle between Supabase and Google Jobs
+  const [googleJobs, setGoogleJobs] = useState<Job[]>([]); // Holds jobs from Google Jobs API
+  const [supabaseJobs, setSupabaseJobs] = useState<Job[]>([]); // Holds jobs from Supabase
   const [googleJobsNextPageToken, setGoogleJobsNextPageToken] = useState<string | undefined>(undefined);
   const [hasMoreGoogleJobs, setHasMoreGoogleJobs] = useState(false);
+  const [loadingGoogleJobs, setLoadingGoogleJobs] = useState(false);
   
   // Filters state including timeCommitment
   const [filters, setFilters] = useState<{ 
@@ -29,24 +31,24 @@ export function FindJobsPage() {
     datePosted: '' 
   });
 
-  // Fetch jobs from Supabase or Google Jobs API
+  // Fetch jobs from both Supabase and Google Jobs API
   useEffect(() => {
-    async function fetchJobs() {
+    async function fetchAllJobs() {
       setLoading(true);
       try {
-        if (useGoogleJobs) {
-          await fetchGoogleJobs();
-        } else {
-          await fetchSupabaseJobs();
-        }
+        // Fetch from Supabase
+        await fetchSupabaseJobs();
+        
+        // Fetch from Google Jobs API
+        await fetchGoogleJobs();
       } catch (error) {
         console.error("Failed to fetch jobs:", error);
       } finally {
         setLoading(false);
       }
     }
-    fetchJobs();
-  }, [useGoogleJobs]);
+    fetchAllJobs();
+  }, []);
 
   // Fetch jobs from Supabase
   async function fetchSupabaseJobs() {
@@ -60,9 +62,13 @@ export function FindJobsPage() {
       
       const jobsWithDates = data.map(job => ({
         ...job,
-        postedAt: new Date(job.posted_at)
+        postedAt: new Date(job.posted_at),
+        source: 'supabase' as 'supabase' // Add source identifier with type assertion
       }));
-      setAllJobs(jobsWithDates);
+      setSupabaseJobs(jobsWithDates);
+      
+      // Update allJobs with both sources
+      setAllJobs([...jobsWithDates, ...googleJobs]);
     } catch (error) {
       console.error("Failed to fetch jobs from Supabase:", error);
     }
@@ -71,6 +77,7 @@ export function FindJobsPage() {
   // Fetch jobs from Google Jobs API
   async function fetchGoogleJobs(pageToken?: string) {
     try {
+      setLoadingGoogleJobs(true);
       const googleJobsService = getGoogleJobsService();
       
       // Create query parameters with Houston location and internship focus
@@ -91,11 +98,20 @@ export function FindJobsPage() {
       const query = searchQuery || 'high school internship';
       result = await googleJobsService.searchJobs(query, queryParams);
       
+      // Add source identifier to each job
+      const jobsWithSource = result.jobs.map(job => ({
+        ...job,
+        source: 'google' as 'google' // Add source identifier with type assertion
+      }));
+      
       // Update state
       if (pageToken) {
-        setAllJobs(prevJobs => [...prevJobs, ...result.jobs]);
+        const updatedGoogleJobs = [...googleJobs, ...jobsWithSource];
+        setGoogleJobs(updatedGoogleJobs);
+        setAllJobs([...supabaseJobs, ...updatedGoogleJobs]);
       } else {
-        setAllJobs(result.jobs);
+        setGoogleJobs(jobsWithSource);
+        setAllJobs([...supabaseJobs, ...jobsWithSource]);
       }
       
       // Update pagination state
@@ -103,12 +119,14 @@ export function FindJobsPage() {
       setHasMoreGoogleJobs(!!result.nextPageToken);
     } catch (error) {
       console.error("Failed to fetch jobs from Google Jobs API:", error);
+    } finally {
+      setLoadingGoogleJobs(false);
     }
   }
 
   // Load more Google Jobs
   const loadMoreGoogleJobs = async () => {
-    if (googleJobsNextPageToken) {
+    if (googleJobsNextPageToken && !loadingGoogleJobs) {
       await fetchGoogleJobs(googleJobsNextPageToken);
     }
   };
@@ -162,10 +180,9 @@ export function FindJobsPage() {
     setSearchQuery(query);
     setLocation(loc);
     
-    // If using Google Jobs API, refetch with new search parameters
-    if (useGoogleJobs) {
-      fetchGoogleJobs();
-    }
+    // Refetch from both sources with new search parameters
+    fetchSupabaseJobs();
+    fetchGoogleJobs();
   };
 
   const handleFilterChange = (newFilters: { 
@@ -176,25 +193,9 @@ export function FindJobsPage() {
   }) => {
     setFilters(newFilters); // Update filters state
     
-    // If using Google Jobs API, refetch with new filters
-    if (useGoogleJobs) {
-      fetchGoogleJobs();
-    }
-  };
-
-  // Toggle between Supabase and Google Jobs API
-  const toggleJobSource = () => {
-    setUseGoogleJobs(!useGoogleJobs);
-    // When switching to Google Jobs, reset search and filters to focus on Houston high school internships
-    if (!useGoogleJobs) { // This means we're switching TO Google Jobs
-      setSearchQuery('high school internship');
-      setLocation('Houston, TX');
-      setFilters({
-        ...filters,
-        type: 'Internship',
-        level: 'Entry Level'
-      });
-    }
+    // Refetch from both sources with new filters
+    fetchSupabaseJobs();
+    fetchGoogleJobs();
   };
 
   if (loading) {
@@ -217,31 +218,6 @@ export function FindJobsPage() {
             Browse through flexible jobs for evenings, weekends, or summer breaks
           </p>
           <SearchBar onSearch={handleSearch} />
-          
-          {/* Toggle between Supabase and Google Jobs */}
-          <div className="mt-6 flex justify-center items-center">
-            <span className={`mr-2 ${!useGoogleJobs ? 'text-blue-400 font-semibold' : 'text-gray-400'}`}>
-              Local Database
-            </span>
-            <button 
-              onClick={toggleJobSource}
-              className="relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none"
-            >
-              <span
-                className={`${
-                  useGoogleJobs ? 'bg-blue-600' : 'bg-gray-600'
-                } inline-block h-6 w-11 rounded-full transition-colors`}
-              />
-              <span
-                className={`${
-                  useGoogleJobs ? 'translate-x-6' : 'translate-x-1'
-                } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-              />
-            </button>
-            <span className={`ml-2 ${useGoogleJobs ? 'text-blue-400 font-semibold' : 'text-gray-400'}`}>
-              Google Jobs
-            </span>
-          </div>
         </div>
       </div>
 
@@ -276,13 +252,14 @@ export function FindJobsPage() {
                 </div>
                 
                 {/* Load more button for Google Jobs */}
-                {useGoogleJobs && hasMoreGoogleJobs && (
+                {hasMoreGoogleJobs && (
                   <div className="mt-8 text-center">
                     <button
                       onClick={loadMoreGoogleJobs}
-                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      disabled={loadingGoogleJobs}
+                      className={`px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${loadingGoogleJobs ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                      Load More Jobs
+                      {loadingGoogleJobs ? 'Loading...' : 'Load More Jobs'}
                     </button>
                   </div>
                 )}

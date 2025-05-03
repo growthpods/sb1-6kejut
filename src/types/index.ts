@@ -13,6 +13,7 @@ export interface Job {
   externalLink?: string;
   applicationUrl?: string;
   companyLogo?: string;
+  source?: 'supabase' | 'google'; // Source of the job listing
 }
 
 export interface User {
