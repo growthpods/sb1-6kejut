@@ -4,6 +4,7 @@ import { SearchBar } from '../components/SearchBar';
 import { JobCard } from '../components/JobCard';
 import { JobFilters } from '../components/job/JobFilters';
 import { supabase } from '../lib/supabase';
+import { getGoogleJobsService } from '../lib/googleJobs';
 import type { Job } from '../types';
 
 export function FindJobsPage() {
@@ -11,6 +12,9 @@ export function FindJobsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
+  const [useGoogleJobs, setUseGoogleJobs] = useState(false); // Toggle between Supabase and Google Jobs
+  const [googleJobsNextPageToken, setGoogleJobsNextPageToken] = useState<string | undefined>(undefined);
+  const [hasMoreGoogleJobs, setHasMoreGoogleJobs] = useState(false);
   
   // Filters state including timeCommitment
   const [filters, setFilters] = useState<{ 
@@ -25,22 +29,16 @@ export function FindJobsPage() {
     datePosted: '' 
   });
 
-  // Fetch jobs from JSON file
+  // Fetch jobs from Supabase or Google Jobs API
   useEffect(() => {
     async function fetchJobs() {
+      setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('jobs')
-          .select('*')
-          .order('posted_at', { ascending: false });
-
-        if (error) throw error;
-        
-        const jobsWithDates = data.map(job => ({
-          ...job,
-          postedAt: new Date(job.posted_at)
-        }));
-        setAllJobs(jobsWithDates);
+        if (useGoogleJobs) {
+          await fetchGoogleJobs();
+        } else {
+          await fetchSupabaseJobs();
+        }
       } catch (error) {
         console.error("Failed to fetch jobs:", error);
       } finally {
@@ -48,7 +46,74 @@ export function FindJobsPage() {
       }
     }
     fetchJobs();
-  }, []);
+  }, [useGoogleJobs]);
+
+  // Fetch jobs from Supabase
+  async function fetchSupabaseJobs() {
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .order('posted_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const jobsWithDates = data.map(job => ({
+        ...job,
+        postedAt: new Date(job.posted_at)
+      }));
+      setAllJobs(jobsWithDates);
+    } catch (error) {
+      console.error("Failed to fetch jobs from Supabase:", error);
+    }
+  }
+
+  // Fetch jobs from Google Jobs API
+  async function fetchGoogleJobs(pageToken?: string) {
+    try {
+      const googleJobsService = getGoogleJobsService();
+      
+      // Create query parameters
+      const queryParams: any = {
+        pageSize: 20,
+        pageToken: pageToken || undefined
+      };
+      
+      // Add filters if they exist
+      if (location) queryParams.location = location;
+      if (filters.type) queryParams.jobType = filters.type;
+      if (filters.level) queryParams.experienceLevel = filters.level;
+      if (filters.timeCommitment) queryParams.timeCommitment = filters.timeCommitment;
+      
+      // Fetch jobs
+      let result;
+      if (searchQuery) {
+        result = await googleJobsService.searchJobs(searchQuery, queryParams);
+      } else {
+        result = await googleJobsService.listJobs(queryParams);
+      }
+      
+      // Update state
+      if (pageToken) {
+        setAllJobs(prevJobs => [...prevJobs, ...result.jobs]);
+      } else {
+        setAllJobs(result.jobs);
+      }
+      
+      // Update pagination state
+      setGoogleJobsNextPageToken(result.nextPageToken);
+      setHasMoreGoogleJobs(!!result.nextPageToken);
+    } catch (error) {
+      console.error("Failed to fetch jobs from Google Jobs API:", error);
+    }
+  }
+
+  // Load more Google Jobs
+  const loadMoreGoogleJobs = async () => {
+    if (googleJobsNextPageToken) {
+      await fetchGoogleJobs(googleJobsNextPageToken);
+    }
+  };
 
   // Memoized filtering logic
   const filteredJobs = useMemo(() => {
@@ -98,6 +163,11 @@ export function FindJobsPage() {
   const handleSearch = (query: string, loc: string) => {
     setSearchQuery(query);
     setLocation(loc);
+    
+    // If using Google Jobs API, refetch with new search parameters
+    if (useGoogleJobs) {
+      fetchGoogleJobs();
+    }
   };
 
   const handleFilterChange = (newFilters: { 
@@ -107,6 +177,16 @@ export function FindJobsPage() {
     datePosted: string 
   }) => {
     setFilters(newFilters); // Update filters state
+    
+    // If using Google Jobs API, refetch with new filters
+    if (useGoogleJobs) {
+      fetchGoogleJobs();
+    }
+  };
+
+  // Toggle between Supabase and Google Jobs API
+  const toggleJobSource = () => {
+    setUseGoogleJobs(!useGoogleJobs);
   };
 
   if (loading) {
@@ -129,6 +209,31 @@ export function FindJobsPage() {
             Browse through flexible jobs for evenings, weekends, or summer breaks
           </p>
           <SearchBar onSearch={handleSearch} />
+          
+          {/* Toggle between Supabase and Google Jobs */}
+          <div className="mt-6 flex justify-center items-center">
+            <span className={`mr-2 ${!useGoogleJobs ? 'text-blue-400 font-semibold' : 'text-gray-400'}`}>
+              Local Database
+            </span>
+            <button 
+              onClick={toggleJobSource}
+              className="relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none"
+            >
+              <span
+                className={`${
+                  useGoogleJobs ? 'bg-blue-600' : 'bg-gray-600'
+                } inline-block h-6 w-11 rounded-full transition-colors`}
+              />
+              <span
+                className={`${
+                  useGoogleJobs ? 'translate-x-6' : 'translate-x-1'
+                } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+              />
+            </button>
+            <span className={`ml-2 ${useGoogleJobs ? 'text-blue-400 font-semibold' : 'text-gray-400'}`}>
+              Google Jobs
+            </span>
+          </div>
         </div>
       </div>
 
@@ -153,13 +258,27 @@ export function FindJobsPage() {
             </div>
 
             {filteredJobs.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {filteredJobs.map((job) => (
-                  <Link key={job.id} to={`/jobs/${job.id}`}>
-                    <JobCard job={job} />
-                  </Link>
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {filteredJobs.map((job) => (
+                    <Link key={job.id} to={`/jobs/${job.id}`}>
+                      <JobCard job={job} />
+                    </Link>
+                  ))}
+                </div>
+                
+                {/* Load more button for Google Jobs */}
+                {useGoogleJobs && hasMoreGoogleJobs && (
+                  <div className="mt-8 text-center">
+                    <button
+                      onClick={loadMoreGoogleJobs}
+                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Load More Jobs
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-12 bg-white rounded-lg shadow-sm p-8">
                 <p className="text-gray-500 text-lg">No jobs found matching your criteria</p>
