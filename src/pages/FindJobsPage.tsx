@@ -73,25 +73,23 @@ export function FindJobsPage() {
     try {
       const googleJobsService = getGoogleJobsService();
       
-      // Create query parameters
+      // Create query parameters with Houston location and internship focus
       const queryParams: any = {
         pageSize: 20,
-        pageToken: pageToken || undefined
+        pageToken: pageToken || undefined,
+        location: location || 'Houston, TX', // Default to Houston if no location specified
+        jobType: filters.type || 'Internship', // Default to Internship if no type specified
+        experienceLevel: filters.level || 'Entry Level' // Default to Entry Level for high school students
       };
       
-      // Add filters if they exist
-      if (location) queryParams.location = location;
-      if (filters.type) queryParams.jobType = filters.type;
-      if (filters.level) queryParams.experienceLevel = filters.level;
+      // Add time commitment filter if it exists
       if (filters.timeCommitment) queryParams.timeCommitment = filters.timeCommitment;
       
       // Fetch jobs
       let result;
-      if (searchQuery) {
-        result = await googleJobsService.searchJobs(searchQuery, queryParams);
-      } else {
-        result = await googleJobsService.listJobs(queryParams);
-      }
+      // If there's a search query, use it, otherwise search for "high school internship"
+      const query = searchQuery || 'high school internship';
+      result = await googleJobsService.searchJobs(query, queryParams);
       
       // Update state
       if (pageToken) {
@@ -187,6 +185,16 @@ export function FindJobsPage() {
   // Toggle between Supabase and Google Jobs API
   const toggleJobSource = () => {
     setUseGoogleJobs(!useGoogleJobs);
+    // When switching to Google Jobs, reset search and filters to focus on Houston high school internships
+    if (!useGoogleJobs) { // This means we're switching TO Google Jobs
+      setSearchQuery('high school internship');
+      setLocation('Houston, TX');
+      setFilters({
+        ...filters,
+        type: 'Internship',
+        level: 'Entry Level'
+      });
+    }
   };
 
   if (loading) {

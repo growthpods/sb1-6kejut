@@ -25,15 +25,23 @@ async function testGoogleJobs() {
     console.log(`Found ${listResult.jobs.length} jobs`);
     console.log('First job:', JSON.stringify(listResult.jobs[0], null, 2));
     
-    // Test searching jobs
-    console.log('\n--- Testing searchJobs ---');
-    const searchResult = await googleJobsService.searchJobs('internship', { 
+    // Test searching for high school internships in Houston
+    console.log('\n--- Testing searchJobs for High School Internships in Houston ---');
+    const searchResult = await googleJobsService.searchJobs('high school internship', { 
       location: 'Houston, TX',
-      pageSize: 5 
+      jobType: 'Internship',
+      experienceLevel: 'Entry Level',
+      pageSize: 10
     });
-    console.log(`Found ${searchResult.jobs.length} jobs matching 'internship' in Houston, TX`);
+    console.log(`Found ${searchResult.jobs.length} high school internships in Houston, TX`);
     if (searchResult.jobs.length > 0) {
       console.log('First search result:', JSON.stringify(searchResult.jobs[0], null, 2));
+      
+      // Print a summary of all found jobs
+      console.log('\nSummary of found high school internships:');
+      searchResult.jobs.forEach((job, index) => {
+        console.log(`${index + 1}. ${job.title} at ${job.company} - ${job.location}`);
+      });
     }
     
     console.log('\nGoogle Jobs API integration test completed successfully');
