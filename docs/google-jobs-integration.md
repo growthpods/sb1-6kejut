@@ -21,9 +21,31 @@ The Google Jobs API integration requires the following environment variables to 
 ```
 GOOGLE_CLOUD_PROJECT_ID=your-project-id
 GOOGLE_CLOUD_TENANT_ID=your-tenant-id
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
 ```
 
-Replace `your-project-id` and `your-tenant-id` with your actual Google Cloud project ID and tenant ID.
+Replace these values with your actual Google Cloud credentials:
+
+1. **GOOGLE_CLOUD_PROJECT_ID**: Your Google Cloud project ID (found in the Google Cloud Console dashboard)
+2. **GOOGLE_CLOUD_TENANT_ID**: Your tenant ID in the Cloud Talent Solution (you need to create a tenant in the Cloud Talent Solution console)
+3. **GOOGLE_APPLICATION_CREDENTIALS**: Path to your service account key JSON file
+
+### Creating a Service Account
+
+To create a service account and download the key file:
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
+2. Navigate to "IAM & Admin" > "Service Accounts"
+3. Click "Create Service Account"
+4. Enter a name and description for the service account
+5. Assign the "Cloud Talent Solution API User" role
+6. Click "Create and Continue"
+7. Click "Done"
+8. Find the service account in the list, click the three dots menu, and select "Manage keys"
+9. Click "Add Key" > "Create new key"
+10. Select "JSON" and click "Create"
+11. Save the downloaded JSON file securely
+12. Set the path to this file in the `GOOGLE_APPLICATION_CREDENTIALS` environment variable
 
 ## Usage
 
