@@ -281,10 +281,10 @@ export function PostJobPage() {
       return;
     }
     
-    // Check required fields
+    // Check required fields - Note that timeCommitment and applicationUrl might not exist in the database yet
     const requiredFields: (keyof Job)[] = [
       'title', 'company', 'location', 'description', 
-      'type', 'level', 'timeCommitment', 'applicationUrl'
+      'type', 'level'
     ];
     const missingFields = requiredFields.filter(field => !jobData[field]);
 
@@ -298,21 +298,29 @@ export function PostJobPage() {
 
     try {
       // Prepare data for Supabase (using snake_case for column names)
-      const dataToInsert = {
+      // Include timeCommitment and applicationUrl if they exist in jobData
+      const dataToInsert: any = {
         title: jobData.title!,
         company: jobData.company!,
         location: jobData.location!,
         description: jobData.description!,
         type: jobData.type!,
         level: jobData.level!,
-        time_commitment: jobData.timeCommitment!,
-        application_url: jobData.applicationUrl!,
         external_link: jobData.externalLink || null,
         employer_id: user.id,
         requirements: jobData.requirements || [],
         posted_at: new Date().toISOString(),
         applicants: 0
       };
+      
+      // Add timeCommitment and applicationUrl if they exist in jobData
+      if ('timeCommitment' in jobData && jobData.timeCommitment) {
+        dataToInsert.time_commitment = jobData.timeCommitment;
+      }
+      
+      if ('applicationUrl' in jobData && jobData.applicationUrl) {
+        dataToInsert.application_url = jobData.applicationUrl;
+      }
 
       const { error } = await supabase.from('jobs').insert(dataToInsert);
 

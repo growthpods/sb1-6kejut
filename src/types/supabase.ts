@@ -24,6 +24,8 @@ export interface Database {
           external_link: string | null
           company_logo: string | null
           employer_id: string
+          time_commitment: string | null
+          application_url: string | null
         }
         Insert: {
           id?: string
@@ -39,6 +41,8 @@ export interface Database {
           external_link?: string | null
           company_logo?: string | null
           employer_id: string
+          time_commitment?: string | null
+          application_url?: string | null
         }
         Update: {
           id?: string
@@ -54,6 +58,8 @@ export interface Database {
           external_link?: string | null
           company_logo?: string | null
           employer_id?: string
+          time_commitment?: string | null
+          application_url?: string | null
         }
       }
       applications: {

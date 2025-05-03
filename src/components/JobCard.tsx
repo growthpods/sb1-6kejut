@@ -12,7 +12,9 @@ export function JobCard({ job, showApplyButton = true }: JobCardProps) {
     e.preventDefault();
     e.stopPropagation();
     
-    if (job.applicationUrl) {
+    // Handle case where applicationUrl might not exist in the database yet
+    // First check if the field exists in the job object
+    if ('applicationUrl' in job && job.applicationUrl) {
       window.open(job.applicationUrl, '_blank');
     } else if (job.externalLink) {
       window.open(job.externalLink, '_blank');
@@ -53,7 +55,8 @@ export function JobCard({ job, showApplyButton = true }: JobCardProps) {
             {job.level}
           </span>
         )}
-        {job.timeCommitment && (
+        {/* Handle case where timeCommitment might not exist in the database yet */}
+        {'timeCommitment' in job && job.timeCommitment && (
           <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm flex items-center">
             <Clock className="w-3 h-3 mr-1" />
             {job.timeCommitment}
@@ -72,7 +75,7 @@ export function JobCard({ job, showApplyButton = true }: JobCardProps) {
           Posted {new Date(job.postedAt).toLocaleDateString()}
         </span>
         
-        {showApplyButton && (job.applicationUrl || job.externalLink) && (
+        {showApplyButton && (('applicationUrl' in job && job.applicationUrl) || job.externalLink) && (
           <button 
             onClick={handleApplyClick}
             className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"

@@ -80,8 +80,8 @@ export function JobDetailsPage() {
                 <h1 className="text-3xl font-bold">{job.title}</h1>
                 <p className="text-xl text-gray-600 mt-1">{job.company}</p>
                 
-                {/* Time Commitment Badge */}
-                {job.timeCommitment && (
+                {/* Time Commitment Badge - Handle case where timeCommitment might not exist in the database yet */}
+                {'timeCommitment' in job && job.timeCommitment && (
                   <div className="mt-2">
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                       <Clock className="w-4 h-4 mr-1" />
@@ -92,8 +92,8 @@ export function JobDetailsPage() {
               </div>
             </div>
             
-            {/* Use application URL if available, fall back to external link */}
-            {job.applicationUrl ? (
+            {/* Use application URL if available, fall back to external link - Handle case where applicationUrl might not exist in the database yet */}
+            {'applicationUrl' in job && job.applicationUrl ? (
               <a
                 href={job.applicationUrl}
                 target="_blank"
@@ -137,7 +137,8 @@ export function JobDetailsPage() {
               <Check className="w-5 h-5 text-gray-400" />
               <span>{job.level || 'N/A'}</span>
             </div>
-            {job.timeCommitment && (
+            {/* Handle case where timeCommitment might not exist in the database yet */}
+            {'timeCommitment' in job && job.timeCommitment && (
               <div className="flex items-center gap-2">
                 <Clock className="w-5 h-5 text-green-500" />
                 <span className="font-medium text-green-700">{job.timeCommitment} Availability</span>

@@ -71,9 +71,9 @@ export function FindJobsPage() {
       // Level filter
       const matchesLevel = !filters.level || job.level === filters.level;
       
-      // Time Commitment filter
+      // Time Commitment filter - Handle case where timeCommitment might not exist in the database yet
       const matchesTimeCommitment = !filters.timeCommitment || 
-        job.timeCommitment === filters.timeCommitment;
+        ('timeCommitment' in job && job.timeCommitment === filters.timeCommitment);
 
       // Date Posted filter (Example: last 7 days) - Requires more robust date logic
       const matchesDate = !filters.datePosted || (() => {

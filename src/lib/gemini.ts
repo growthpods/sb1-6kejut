@@ -8,7 +8,7 @@ import { GoogleGenAI } from '@google/genai';
  */
 export class GeminiClient {
   private ai: GoogleGenAI;
-  private defaultModel: string = 'gemini-2.0-flash';
+  private defaultModel: string = 'gemini-2.5-flash-preview-04-17';
 
   constructor(apiKey: string, model?: string) {
     this.ai = new GoogleGenAI({ apiKey });

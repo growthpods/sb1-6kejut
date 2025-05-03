@@ -29,6 +29,7 @@ This file tracks the current work focus. Please update with recent changes, next
 - Add unit tests for the Gemini API integration
 - Test the guardrails to ensure they're effective
 - Ensure the job posting workflow correctly collects contact information
+- Update Supabase API keys in .env file
 
 ## Active Decisions
 - Using Google Gemini API instead of OpenRouter for better performance and reliability

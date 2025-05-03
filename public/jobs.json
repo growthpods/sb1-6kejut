@@ -63,5 +63,84 @@
     "applicants": 0,
     "postedAt": "2025-04-05T03:10:25.150Z",
     "externalLink": "https://www.indeed.com/rc/clk?jk=4f7f479f2315f5bd&bb=9K0hXxCQ4mBow7owVUy6u-dgQxGWWq-h0jiuKTHyKZUCpro5WoMOF9oksoJvdQ4A1Szpjce9lfcrGUATzu0Bu8Vr-vm5cApgoTwYN3rux5Yp0JM6uAAqmEqnqR8rIs5H&xkcb=SoAF67M3zByvePzb4R0PbzkdCdPP&fccid=399fc3b577de7b68&vjs=3"
+  },
+  {
+    "id": "8fe594cb-a700-47e2-95be-ea9bb8fb132f",
+    "title": "Software Development Intern",
+    "company": "TechHouston",
+    "location": "Houston, TX",
+    "description": "We're looking for a talented high school student to join our software development team for the summer. This is a great opportunity to gain real-world experience in a fast-paced tech environment.",
+    "requirements": [
+      "Currently enrolled in high school",
+      "Basic knowledge of programming (JavaScript, Python, or similar)",
+      "Eager to learn and grow",
+      "Available to work 20 hours per week during summer"
+    ],
+    "type": "Internship",
+    "level": "Entry Level",
+    "applicants": 0,
+    "postedAt": "2025-05-03T21:39:37.234Z",
+    "externalLink": "https://techhouston.example.com/careers/apply",
+    "timeCommitment": "Summer"
+  },
+  {
+    "id": "ac461bc9-81ed-4e32-b72d-b6d90a000da7",
+    "title": "Marketing Intern",
+    "company": "Houston Media Group",
+    "location": "Houston, TX",
+    "description": "Join our marketing team for a summer internship! You'll get hands-on experience with social media management, content creation, and digital marketing campaigns.",
+    "requirements": [
+      "High school student (rising junior or senior preferred)",
+      "Interest in marketing and communications",
+      "Creative mindset",
+      "Good writing skills",
+      "Familiarity with social media platforms"
+    ],
+    "type": "Internship",
+    "level": "Entry Level",
+    "applicants": 0,
+    "postedAt": "2025-05-03T21:39:37.235Z",
+    "externalLink": "mailto:careers@houstonmedia.example.com",
+    "timeCommitment": "Summer"
+  },
+  {
+    "id": "55eef51e-51d1-41b7-922c-2c0f732799d6",
+    "title": "Research Assistant Intern",
+    "company": "Houston Medical Center",
+    "location": "Houston, TX",
+    "description": "The Houston Medical Center is seeking a motivated high school student to assist our research team during the summer months. This internship provides a unique opportunity to gain experience in a medical research environment.",
+    "requirements": [
+      "Current high school student with interest in medicine or science",
+      "Strong attention to detail",
+      "Basic computer skills",
+      "Ability to follow instructions precisely",
+      "Interest in healthcare or medical research"
+    ],
+    "type": "Internship",
+    "level": "Entry Level",
+    "applicants": 0,
+    "postedAt": "2025-05-03T21:39:37.235Z",
+    "externalLink": "https://houstonmedical.example.com/internships",
+    "timeCommitment": "Summer"
+  },
+  {
+    "id": "31e01f52-48e8-4df6-a3a8-c98346160b48",
+    "title": "Engineering Intern",
+    "company": "Houston Engineering Solutions",
+    "location": "Houston, TX",
+    "description": "Houston Engineering Solutions is offering a summer internship program for high school students interested in engineering. This hands-on program will provide real-world experience in various engineering disciplines.",
+    "requirements": [
+      "Current high school student (junior or senior)",
+      "Strong interest in engineering",
+      "Good math and science skills",
+      "Ability to work in a team environment",
+      "Willingness to learn and take direction"
+    ],
+    "type": "Internship",
+    "level": "Entry Level",
+    "applicants": 0,
+    "postedAt": "2025-05-03T21:39:37.235Z",
+    "externalLink": "https://houstonengineering.example.com/careers/internships",
+    "timeCommitment": "Summer"
   }
 ]

@@ -23,27 +23,68 @@ async function withRetry<T>(operation: () => Promise<T>): Promise<T> {
   throw lastError;
 }
 
-export async function signInDemoEmployer() {
+export async function signInDemoEmployer(): Promise<any> {
   return withRetry(async () => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: 'rraj@growthpods.io',
-      password: 'employer123'
-    });
+    // Check if OTP is required
+    const { data: otpData, error: otpError } = await supabase
+      .from('employer_otps')
+      .select('otp')
+      .eq('email', 'rraj@growthpods.io')
+      .single();
 
-    if (error) {
-      if (error.message.includes('Invalid login credentials')) {
-        // Create the demo employer account if it doesn't exist
-        await createDemoEmployer();
-        return signInDemoEmployer();
-      }
-      throw error;
+    if (otpError) {
+      console.error('Error fetching OTP:', otpError);
+      throw otpError;
     }
 
-    return { data, error };
+    if (otpData) {
+      // OTP is required, prompt user to enter OTP
+      // TODO: Add UI code to prompt user for OTP
+      // and store the entered OTP in the enteredOTP variable
+      let enteredOTP: string | null = null; // Replace null with the actual entered OTP
+
+      if (!enteredOTP || enteredOTP !== otpData.otp) {
+        throw new Error('Invalid OTP');
+      }
+
+      // OTP is valid, proceed with sign-in
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: 'rraj@growthpods.io',
+        password: 'employer123'
+      });
+
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          // Create the demo employer account if it doesn't exist
+          await createDemoEmployer();
+          return signInDemoEmployer();
+        }
+        throw error;
+      }
+
+      return { data, error };
+    } else {
+      // OTP is not required, proceed with sign-in
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: 'rraj@growthpods.io',
+        password: 'employer123'
+      });
+
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          // Create the demo employer account if it doesn't exist
+          await createDemoEmployer();
+          return signInDemoEmployer();
+        }
+        throw error;
+      }
+
+      return { data, error };
+    }
   });
 }
 
-export async function createDemoEmployer() {
+export async function createDemoEmployer(): Promise<any> {
   return withRetry(async () => {
     const { data, error } = await supabase.auth.signUp({
       email: 'rraj@growthpods.io',
@@ -58,6 +99,15 @@ export async function createDemoEmployer() {
 
     if (error && !error.message.includes('User already registered')) {
       throw error;
+    }
+
+    // Generate and send OTP
+    if (data?.user?.email) {
+      await supabase.functions.invoke('generate_otp', {
+        body: {
+          email: data.user.email
+        }
+      });
     }
 
     return { data, error };

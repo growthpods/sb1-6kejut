@@ -75,9 +75,9 @@ export function HomePage() {
       // Level filter
       const matchesLevel = filters.level === 'All' || job.level === filters.level;
       
-      // Time Commitment filter
+      // Time Commitment filter - Handle case where timeCommitment might not exist in the database yet
       const matchesTimeCommitment = !filters.timeCommitment || 
-        job.timeCommitment === filters.timeCommitment;
+        ('timeCommitment' in job && job.timeCommitment === filters.timeCommitment);
 
       // Date Posted filter
       const matchesDate = filters.datePosted === 'Any time' || (() => {
