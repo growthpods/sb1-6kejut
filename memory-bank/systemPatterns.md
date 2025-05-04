@@ -11,8 +11,8 @@ This file documents the system architecture, key technical decisions, design pat
 - Page-based routing with React Router
 
 ### Backend Architecture
-- Supabase for authentication, database, and storage
-- PostgreSQL database with RLS (Row Level Security)
+- Supabase for authentication, database, and storage (via MCP server)
+- PostgreSQL database with RLS (Row Level Security) (via Supabase MCP server)
 - Serverless functions for backend logic
 
 ### AI Integration Architecture
@@ -33,8 +33,8 @@ This file documents the system architecture, key technical decisions, design pat
 - TailwindCSS for utility-first styling
 
 ### Backend Services
-- Supabase for authentication, database, and storage
-- PostgreSQL for relational data storage
+- Supabase for authentication, database, and storage (via MCP server)
+- PostgreSQL for relational data storage (via Supabase MCP server)
 - RLS for data access control
 
 ### AI Integration
@@ -114,3 +114,11 @@ This file documents the system architecture, key technical decisions, design pat
 - Summarize collected information and ask for confirmation
 - Store job posting data in the database
 - Redirect off-topic queries back to job posting tasks
+
+## External Job Data Integration
+- RapidAPI Internships API integration for Houston high school internships
+- Weekly scheduled job to fetch and store internships
+- Filtering mechanism for location (Houston, TX) and education level (high school)
+- Duplicate detection to prevent re-adding existing internships
+- Source tracking to distinguish API-sourced jobs from manually posted ones
+- Time commitment detection based on job title and description

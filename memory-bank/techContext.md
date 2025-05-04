@@ -12,12 +12,13 @@ This file documents the technologies used, development setup, technical constrai
 - Lucide React for icons
 
 ### Backend
-- Supabase for authentication, database, and storage
-- PostgreSQL database (via Supabase)
+- Supabase for authentication, database, and storage (via MCP server)
+- PostgreSQL database (via Supabase MCP server)
 
 ### APIs
 - Google Gemini API for AI-powered job posting assistance
 - Firecrawl for web scraping job listings
+- RapidAPI Internships API for fetching internship listings
 
 ### Deployment
 - Netlify for frontend hosting
@@ -62,6 +63,14 @@ This file documents the technologies used, development setup, technical constrai
 - Used for scraping job listings from external websites
 - Provides structured data extraction from web pages
 - Used in the job posting workflow to extract job details from URLs
+
+### RapidAPI Internships API
+- Used for fetching internship listings from external sources
+- API endpoint: https://internships-api.p.rapidapi.com/active-jb-7d
+- Authentication: API key via RapidAPI
+- Weekly scheduled job to fetch and store internships
+- Filters for Houston, TX and high school internships
+- Stores internship data in the jobs table with source='RapidAPI'
 
 ## LLM Guardrails Implementation
 - System prompts with clear role definition

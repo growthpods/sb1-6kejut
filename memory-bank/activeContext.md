@@ -11,6 +11,9 @@ This file tracks the current work focus.
 - Adding email notifications for job applications
 - Testing the guardrails to ensure they're effective
 - Ensuring the job posting workflow correctly collects contact information
+- Testing and refining the RapidAPI Internships integration
+- Setting up automated scheduling for the weekly internship fetch job
+- Updating all Supabase operations to use the MCP server instead of direct API calls
 
 ## Recent Changes
 - Replaced OpenRouter API with Google Gemini API for job posting functionality
@@ -25,6 +28,13 @@ This file tracks the current work focus.
 - Strengthened guardrails to strictly limit LLM to job posting tasks only
 - Added explicit rejection responses for off-topic queries
 - Implemented a strict two-task limitation (job description crafting and job link parsing only)
+- Integrated RapidAPI Internships API for fetching Houston high school internships
+- Created database migration to add source and career_site_url columns
+- Developed script to fetch, filter, and store internships from RapidAPI
+- Added npm scripts for running the migration and fetching internships
+- Decided to use Supabase MCP server for all Supabase operations instead of direct API calls
+- Created new script (fetchRapidApiInternshipsMCP.js) to use Supabase MCP server for storing RapidAPI internship results
+- Added npm script (fetch:rapidapi:mcp) to run the new MCP-based script
 
 ## Next Steps
 - Debug the chat interface to properly display responses from the Gemini API
@@ -32,7 +42,11 @@ This file tracks the current work focus.
 - Add unit tests for the Gemini API integration
 - Test the guardrails to ensure they're effective
 - Ensure the job posting workflow correctly collects contact information
-- Update Supabase API keys in .env file
+- Update all Supabase operations to use the MCP server instead of direct API calls
+- Test the RapidAPI Internships integration with real API calls
+- Set up automated scheduling for the weekly internship fetch job
+- Monitor and refine the filtering logic for Houston high school internships
+- Update the UI to display the source of job listings
 
 ## Active Decisions
 - Updated the route for FindJobsPage to /find-jobs to be more explicit
@@ -45,3 +59,8 @@ This file tracks the current work focus.
 - Collecting email or phone when no application URL is available
 - Implementing a strict two-task limitation (job description crafting and job link parsing only)
 - Using GitHub repository at https://github.com/growthpods/sb1-6kejut.git for version control
+- Using RapidAPI Internships API to fetch Houston high school internships
+- Storing API-sourced jobs with source='RapidAPI' to distinguish from manually posted jobs
+- Implementing weekly scheduled job for fetching internships instead of real-time API calls
+- Adding career_site_url field to store company career site URLs from RapidAPI
+- Using Supabase MCP server for all Supabase operations instead of direct API calls

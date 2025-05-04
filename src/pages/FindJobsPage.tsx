@@ -11,11 +11,7 @@ export function FindJobsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
-  const [externalAPIJobs, setExternalAPIJobs] = useState<Job[]>([]); // Holds jobs from External API
   const [supabaseJobs, setSupabaseJobs] = useState<Job[]>([]); // Holds jobs from Supabase
-  const [externalAPIJobsNextPageToken, setExternalAPIJobsNextPageToken] = useState<string | undefined>(undefined);
-  const [hasMoreExternalAPIJobs, setHasMoreExternalAPIJobs] = useState(false);
-  const [loadingExternalAPIJobs, setLoadingExternalAPIJobs] = useState(false);
   
   // Filters state including timeCommitment
   const [filters, setFilters] = useState<{ 
@@ -36,9 +32,6 @@ export function FindJobsPage() {
       try {
         // Fetch from Supabase
         await fetchSupabaseJobs();
-        
-        // Fetch from External API
-        await fetchExternalAPIJobs();
       } catch (error) {
         console.error("Failed to fetch jobs:", error);
       } finally {
@@ -46,7 +39,7 @@ export function FindJobsPage() {
       }
     }
     fetchAllJobs();
-  }, []);
+  }, [searchQuery, location, filters]);
 
   async function fetchSupabaseJobs() {
     try {
@@ -65,65 +58,11 @@ export function FindJobsPage() {
       setSupabaseJobs(jobsWithDates);
       
       // Update allJobs with both sources
-      setAllJobs([...jobsWithDates, ...externalAPIJobs]);
+      setAllJobs(jobsWithDates);
     } catch (error) {
       console.error("Failed to fetch jobs from Supabase:", error);
     }
   }
-
-  async function fetchExternalAPIJobs(pageToken?: string) {
-    try {
-      setLoadingExternalAPIJobs(true);
-      
-      // Create query parameters with Houston location and internship focus
-      const queryParams: any = {
-        pageSize: 20,
-        pageToken: pageToken || undefined,
-        location: location || 'Houston, TX', // Default to Houston if no location specified
-        jobType: filters.type || 'Internship', // Default to Internship if no type specified
-        experienceLevel: filters.level || 'Entry Level' // Default to Entry Level for high school students
-      };
-      
-      // Add time commitment filter if it exists
-      if (filters.timeCommitment) queryParams.timeCommitment = filters.timeCommitment;
-      
-      // Fetch jobs
-      let result: any;
-      // If there's a search query, use it, otherwise search for "high school internship"
-      const query = searchQuery || 'high school internship';
-      //result = await externalAPIService.searchJobs(query, queryParams);
-      
-      // Add source identifier to each job
-      const jobsWithSource = result?.jobs?.map((job: any) => ({
-        ...job,
-        source: 'externalAPI' as 'externalAPI' // Add source identifier with type assertion
-      })) || [];
-      
-      // Update state
-      if (pageToken) {
-        const updatedExternalAPIJobs = [...externalAPIJobs, ...jobsWithSource];
-        setExternalAPIJobs(updatedExternalAPIJobs);
-        setAllJobs([...supabaseJobs, ...updatedExternalAPIJobs]);
-      } else {
-        setExternalAPIJobs(jobsWithSource);
-        setAllJobs([...supabaseJobs, ...externalAPIJobs]);
-      }
-      
-      // Update pagination state
-      setExternalAPIJobsNextPageToken(result?.nextPageToken);
-      setHasMoreExternalAPIJobs(!!result?.nextPageToken);
-    } catch (error) {
-      console.error("Failed to fetch jobs from External API:", error);
-    } finally {
-      setLoadingExternalAPIJobs(false);
-    }
-  }
-
-  const loadMoreExternalAPIJobs = async () => {
-    if (externalAPIJobsNextPageToken && !loadingExternalAPIJobs) {
-      await fetchExternalAPIJobs(externalAPIJobsNextPageToken);
-    }
-  };
 
   // Memoized filtering logic
   const filteredJobs = useMemo(() => {
@@ -176,7 +115,6 @@ export function FindJobsPage() {
     
     // Refetch from both sources with new search parameters
     fetchSupabaseJobs();
-    fetchExternalAPIJobs();
   };
 
   const handleFilterChange = (newFilters: { 
@@ -189,7 +127,6 @@ export function FindJobsPage() {
     
     // Refetch from both sources with new filters
     fetchSupabaseJobs();
-    fetchExternalAPIJobs();
   };
 
   if (loading) {
@@ -239,23 +176,11 @@ export function FindJobsPage() {
               <>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {filteredJobs.map((job) => (
-                    <Link key={job.id} to={`/jobs/${job.id}`}>
+                    <Link key={job.id} to={`/find-jobs/${job.id}`}>
                       <JobCard job={job} />
                     </Link>
                   ))}
                 </div>
-                
-                {hasMoreExternalAPIJobs && (
-                  <div className="mt-8 text-center">
-                    <button
-                      onClick={loadMoreExternalAPIJobs}
-                      disabled={loadingExternalAPIJobs}
-                      className={`px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${loadingExternalAPIJobs ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      {loadingExternalAPIJobs ? 'Loading...' : 'Load More Jobs'}
-                    </button>
-                  </div>
-                )}
               </>
             ) : (
               <div className="text-center py-12 bg-white rounded-lg shadow-sm p-8">

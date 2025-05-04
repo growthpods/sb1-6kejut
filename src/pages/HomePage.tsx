@@ -178,7 +178,7 @@ export function HomePage() {
               <div className="text-center">
 <Link 
                   to="/find-jobs" 
-                  className="inline-flex items-center text-purple-600 font-medium hover:text-purple-800"
+                  className="inline-flex items-center text-blue-600 font-medium hover:text-blue-800"
                   onClick={() => setFilters({...filters, timeCommitment: 'Evening'})}
                 >
                   Browse Evening Jobs
@@ -199,7 +199,7 @@ export function HomePage() {
               <div className="text-center">
                 <Link 
                   to="/find-jobs" 
-                  className="inline-flex items-center text-blue-600 font-medium hover:text-blue-800"
+                  className="inline-flex items-center text-purple-600 font-medium hover:text-purple-800"
                   onClick={() => setFilters({...filters, timeCommitment: 'Weekend'})}
                 >
                   Browse Weekend Jobs

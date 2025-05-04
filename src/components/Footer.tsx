@@ -29,7 +29,7 @@ export function Footer() {
             <h3 className="text-xl font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/jobs" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <Link to="/find-jobs" className="text-gray-400 hover:text-blue-400 transition-colors">
                   Find Jobs
                 </Link>
               </li>

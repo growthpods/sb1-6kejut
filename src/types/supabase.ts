@@ -26,6 +26,8 @@ export interface Database {
           employer_id: string
           time_commitment: string | null
           application_url: string | null
+          source: string | null
+          career_site_url: string | null
         }
         Insert: {
           id?: string
@@ -43,6 +45,8 @@ export interface Database {
           employer_id: string
           time_commitment?: string | null
           application_url?: string | null
+          source?: string | null
+          career_site_url?: string | null
         }
         Update: {
           id?: string
@@ -60,6 +64,8 @@ export interface Database {
           employer_id?: string
           time_commitment?: string | null
           application_url?: string | null
+          source?: string | null
+          career_site_url?: string | null
         }
       }
       applications: {

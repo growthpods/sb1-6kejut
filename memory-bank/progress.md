@@ -18,6 +18,10 @@ This file tracks what works, what's left to build, current status, and known iss
 - Fixed text inconsistencies in HomePage.tsx (changed "Browse Find-Jobs" to "Browse Jobs", "Browse Evening Jobs", and "Browse Weekend Jobs")
 - Fixed filter settings for job categories (Evening, Weekend, Summer)
 - GitHub repository set up at https://github.com/growthpods/sb1-6kejut.git for version control
+- RapidAPI Internships API integration for fetching Houston high school internships
+- Database schema updated with source and career_site_url columns
+- Weekly job script to fetch and store internships from RapidAPI
+- Script to fetch and store RapidAPI internship results using Supabase MCP server
 
 ## What's Left to Build
 - Debug the chat interface to properly display responses from the Gemini API
@@ -28,6 +32,7 @@ This file tracks what works, what's left to build, current status, and known iss
 - Add email notifications for job applications
 - Test the guardrails to ensure they're effective
 - Ensure the job posting workflow correctly collects contact information
+- Update all Supabase operations to use the MCP server instead of direct API calls
 
 ## Current Status
 - The application is functional with basic features working
@@ -41,6 +46,9 @@ This file tracks what works, what's left to build, current status, and known iss
 - Text inconsistencies in the UI have been fixed (replaced "Find-Jobs" with "Jobs" in button and link text)
 - Filter settings for job categories (Evening, Weekend, Summer) now work correctly
 - Changes have been committed and pushed to GitHub repository
+- Decision made to use Supabase MCP server for all Supabase operations instead of direct API calls
+- Created script to fetch and store RapidAPI internship results using Supabase MCP server
+- Added npm script (fetch:rapidapi:mcp) to run the new MCP-based script
 
 ## Known Issues
 - Chat interface not displaying responses from the Gemini API

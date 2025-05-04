@@ -25,7 +25,7 @@ export default function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/find-jobs" element={<FindJobsPage />} />
               <Route path="/post-job" element={<PostJobPage />} />
-              <Route path="/jobs/:id" element={<JobDetailsPage />} />
+              <Route path="/find-jobs/:id" element={<JobDetailsPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
