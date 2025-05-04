@@ -12,6 +12,7 @@ This file tracks what works, what's left to build, current status, and known iss
 - System prompts with strict guardrails to ensure the LLM stays focused on job posting tasks only
 - Enhanced job posting workflow to collect contact information
 - Explicit rejection responses for off-topic queries
+- Implemented a strict two-task limitation (job description crafting and job link parsing only)
 
 ## What's Left to Build
 - Debug the chat interface to properly display responses from the Gemini API

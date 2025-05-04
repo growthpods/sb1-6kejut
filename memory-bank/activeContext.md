@@ -1,13 +1,16 @@
 # Active Context
 
-This file tracks the current work focus. Please update with recent changes, next steps, and active decisions.
+This file tracks the current work focus.
 
 ## Current Focus
-- Implementing the job posting page with AI assistance
-- Integrating Google Gemini API for LLM capabilities
-- Developing the chat interface for job posting
-- Adding strict guardrails to ensure the LLM stays focused on job posting tasks only
-- Enhancing the job posting workflow to collect contact information
+- Debugging the chat interface to properly display responses from the Gemini API
+- Implementing error handling for API failures
+- Adding unit tests for the Gemini API integration
+- Enhancing the job posting workflow with more AI-powered features
+- Implementing analytics for job posting performance
+- Adding email notifications for job applications
+- Testing the guardrails to ensure they're effective
+- Ensuring the job posting workflow correctly collects contact information
 
 ## Recent Changes
 - Replaced OpenRouter API with Google Gemini API for job posting functionality
@@ -21,10 +24,10 @@ This file tracks the current work focus. Please update with recent changes, next
 - Added detailed workflow instructions to the system prompt
 - Strengthened guardrails to strictly limit LLM to job posting tasks only
 - Added explicit rejection responses for off-topic queries
+- Implemented a strict two-task limitation (job description crafting and job link parsing only)
 
 ## Next Steps
 - Debug the chat interface to properly display responses from the Gemini API
-- Add more detailed logging to track the request/response flow
 - Implement error handling for API failures
 - Add unit tests for the Gemini API integration
 - Test the guardrails to ensure they're effective

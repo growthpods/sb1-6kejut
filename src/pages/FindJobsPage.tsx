@@ -4,7 +4,6 @@ import { SearchBar } from '../components/SearchBar';
 import { JobCard } from '../components/JobCard';
 import { JobFilters } from '../components/job/JobFilters';
 import { supabase } from '../lib/supabase';
-import { getGoogleJobsService } from '../lib/googleJobs';
 import type { Job } from '../types';
 
 export function FindJobsPage() {
@@ -12,11 +11,11 @@ export function FindJobsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
-  const [googleJobs, setGoogleJobs] = useState<Job[]>([]); // Holds jobs from Google Jobs API
+  const [externalAPIJobs, setExternalAPIJobs] = useState<Job[]>([]); // Holds jobs from External API
   const [supabaseJobs, setSupabaseJobs] = useState<Job[]>([]); // Holds jobs from Supabase
-  const [googleJobsNextPageToken, setGoogleJobsNextPageToken] = useState<string | undefined>(undefined);
-  const [hasMoreGoogleJobs, setHasMoreGoogleJobs] = useState(false);
-  const [loadingGoogleJobs, setLoadingGoogleJobs] = useState(false);
+  const [externalAPIJobsNextPageToken, setExternalAPIJobsNextPageToken] = useState<string | undefined>(undefined);
+  const [hasMoreExternalAPIJobs, setHasMoreExternalAPIJobs] = useState(false);
+  const [loadingExternalAPIJobs, setLoadingExternalAPIJobs] = useState(false);
   
   // Filters state including timeCommitment
   const [filters, setFilters] = useState<{ 
@@ -31,7 +30,6 @@ export function FindJobsPage() {
     datePosted: '' 
   });
 
-  // Fetch jobs from both Supabase and Google Jobs API
   useEffect(() => {
     async function fetchAllJobs() {
       setLoading(true);
@@ -39,8 +37,8 @@ export function FindJobsPage() {
         // Fetch from Supabase
         await fetchSupabaseJobs();
         
-        // Fetch from Google Jobs API
-        await fetchGoogleJobs();
+        // Fetch from External API
+        await fetchExternalAPIJobs();
       } catch (error) {
         console.error("Failed to fetch jobs:", error);
       } finally {
@@ -50,7 +48,6 @@ export function FindJobsPage() {
     fetchAllJobs();
   }, []);
 
-  // Fetch jobs from Supabase
   async function fetchSupabaseJobs() {
     try {
       const { data, error } = await supabase
@@ -68,17 +65,15 @@ export function FindJobsPage() {
       setSupabaseJobs(jobsWithDates);
       
       // Update allJobs with both sources
-      setAllJobs([...jobsWithDates, ...googleJobs]);
+      setAllJobs([...jobsWithDates, ...externalAPIJobs]);
     } catch (error) {
       console.error("Failed to fetch jobs from Supabase:", error);
     }
   }
 
-  // Fetch jobs from Google Jobs API
-  async function fetchGoogleJobs(pageToken?: string) {
+  async function fetchExternalAPIJobs(pageToken?: string) {
     try {
-      setLoadingGoogleJobs(true);
-      const googleJobsService = getGoogleJobsService();
+      setLoadingExternalAPIJobs(true);
       
       // Create query parameters with Houston location and internship focus
       const queryParams: any = {
@@ -93,41 +88,40 @@ export function FindJobsPage() {
       if (filters.timeCommitment) queryParams.timeCommitment = filters.timeCommitment;
       
       // Fetch jobs
-      let result;
+      let result: any;
       // If there's a search query, use it, otherwise search for "high school internship"
       const query = searchQuery || 'high school internship';
-      result = await googleJobsService.searchJobs(query, queryParams);
+      //result = await externalAPIService.searchJobs(query, queryParams);
       
       // Add source identifier to each job
-      const jobsWithSource = result.jobs.map(job => ({
+      const jobsWithSource = result?.jobs?.map((job: any) => ({
         ...job,
-        source: 'google' as 'google' // Add source identifier with type assertion
-      }));
+        source: 'externalAPI' as 'externalAPI' // Add source identifier with type assertion
+      })) || [];
       
       // Update state
       if (pageToken) {
-        const updatedGoogleJobs = [...googleJobs, ...jobsWithSource];
-        setGoogleJobs(updatedGoogleJobs);
-        setAllJobs([...supabaseJobs, ...updatedGoogleJobs]);
+        const updatedExternalAPIJobs = [...externalAPIJobs, ...jobsWithSource];
+        setExternalAPIJobs(updatedExternalAPIJobs);
+        setAllJobs([...supabaseJobs, ...updatedExternalAPIJobs]);
       } else {
-        setGoogleJobs(jobsWithSource);
-        setAllJobs([...supabaseJobs, ...jobsWithSource]);
+        setExternalAPIJobs(jobsWithSource);
+        setAllJobs([...supabaseJobs, ...externalAPIJobs]);
       }
       
       // Update pagination state
-      setGoogleJobsNextPageToken(result.nextPageToken);
-      setHasMoreGoogleJobs(!!result.nextPageToken);
+      setExternalAPIJobsNextPageToken(result?.nextPageToken);
+      setHasMoreExternalAPIJobs(!!result?.nextPageToken);
     } catch (error) {
-      console.error("Failed to fetch jobs from Google Jobs API:", error);
+      console.error("Failed to fetch jobs from External API:", error);
     } finally {
-      setLoadingGoogleJobs(false);
+      setLoadingExternalAPIJobs(false);
     }
   }
 
-  // Load more Google Jobs
-  const loadMoreGoogleJobs = async () => {
-    if (googleJobsNextPageToken && !loadingGoogleJobs) {
-      await fetchGoogleJobs(googleJobsNextPageToken);
+  const loadMoreExternalAPIJobs = async () => {
+    if (externalAPIJobsNextPageToken && !loadingExternalAPIJobs) {
+      await fetchExternalAPIJobs(externalAPIJobsNextPageToken);
     }
   };
 
@@ -152,7 +146,7 @@ export function FindJobsPage() {
       // Level filter
       const matchesLevel = !filters.level || job.level === filters.level;
       
-      // Time Commitment filter - Handle case where timeCommitment might not exist in the database yet
+      // Time Commitment filter - Requires more robust date logic
       const matchesTimeCommitment = !filters.timeCommitment || 
         ('timeCommitment' in job && job.timeCommitment === filters.timeCommitment);
 
@@ -182,7 +176,7 @@ export function FindJobsPage() {
     
     // Refetch from both sources with new search parameters
     fetchSupabaseJobs();
-    fetchGoogleJobs();
+    fetchExternalAPIJobs();
   };
 
   const handleFilterChange = (newFilters: { 
@@ -195,7 +189,7 @@ export function FindJobsPage() {
     
     // Refetch from both sources with new filters
     fetchSupabaseJobs();
-    fetchGoogleJobs();
+    fetchExternalAPIJobs();
   };
 
   if (loading) {
@@ -251,15 +245,14 @@ export function FindJobsPage() {
                   ))}
                 </div>
                 
-                {/* Load more button for Google Jobs */}
-                {hasMoreGoogleJobs && (
+                {hasMoreExternalAPIJobs && (
                   <div className="mt-8 text-center">
                     <button
-                      onClick={loadMoreGoogleJobs}
-                      disabled={loadingGoogleJobs}
-                      className={`px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${loadingGoogleJobs ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={loadMoreExternalAPIJobs}
+                      disabled={loadingExternalAPIJobs}
+                      className={`px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${loadingExternalAPIJobs ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                      {loadingGoogleJobs ? 'Loading...' : 'Load More Jobs'}
+                      {loadingExternalAPIJobs ? 'Loading...' : 'Load More Jobs'}
                     </button>
                   </div>
                 )}
