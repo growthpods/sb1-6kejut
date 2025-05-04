@@ -86,3 +86,8 @@ This file documents the technologies used, development setup, technical constrai
 - Database storage for job postings
 - Confirmation step before finalizing
 - Redirection mechanism for off-topic queries
+
+## Version Control
+- GitHub repository: https://github.com/growthpods/sb1-6kejut.git
+- Main branch for production code
+- Git for version control

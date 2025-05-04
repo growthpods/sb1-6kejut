@@ -44,3 +44,4 @@ This file tracks the current work focus.
 - Adding strict guardrails to system prompts to ensure the LLM stays focused on job posting tasks only
 - Collecting email or phone when no application URL is available
 - Implementing a strict two-task limitation (job description crafting and job link parsing only)
+- Using GitHub repository at https://github.com/growthpods/sb1-6kejut.git for version control
