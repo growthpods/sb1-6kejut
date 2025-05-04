@@ -1,0 +1,37 @@
+# Cline Rules for InternJobs.ai Project
+
+This file captures important patterns, preferences, and project intelligence that help Cline work more effectively.
+
+## Version Control
+- GitHub Repository: https://github.com/growthpods/sb1-6kejut.git
+- Always use this repository for version control
+- Main branch for production code
+
+## Naming Conventions
+- Use "Jobs" (not "Find-Jobs") in UI text for consistency
+- Route for jobs listing page is "/find-jobs"
+- Route for job details page is "/find-jobs/:id"
+
+## UI Patterns
+- Time commitment filters:
+  - Evening: For after-school jobs
+  - Weekend: For Saturday/Sunday jobs
+  - Summer: For summer break jobs
+- Job categories are displayed in cards with consistent styling
+- Each job category has its own color scheme:
+  - Evening Jobs: Blue
+  - Weekend Jobs: Purple
+  - Summer Jobs: Green
+
+## Development Workflow
+- Run the development server with `npm run dev`
+- Test changes in the browser before committing
+- Commit changes with descriptive messages
+- Push changes to the GitHub repository
+
+## Project Structure
+- React components in src/components/
+- Pages in src/pages/
+- Utility functions in src/lib/
+- Types in src/types/
+- Memory bank files in memory-bank/
