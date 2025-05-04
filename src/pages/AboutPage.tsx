@@ -14,6 +14,45 @@ export function AboutPage() {
         </div>
       </div>
 
+      {/* Team Section (Moved & Updated) */}
+      <div className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">Our Team</h2>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Ridhi Rentala */}
+            <div className="bg-gray-50 p-8 rounded-xl shadow-sm text-center">
+              <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4"></div> {/* Placeholder image */}
+              <h3 className="text-xl font-semibold mb-2">Ridhi Rentala</h3>
+              <p className="text-blue-600 mb-4">Founder</p>
+              <p className="text-gray-600">
+                A high school entrepreneur and author, Ridhi is passionate about business and advocating for future generation entrepreneurship.
+              </p>
+            </div>
+            
+            {/* Bhavana */}
+            <div className="bg-gray-50 p-8 rounded-xl shadow-sm text-center">
+              <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4"></div> {/* Placeholder image */}
+              <h3 className="text-xl font-semibold mb-2">Bhavana</h3>
+              <p className="text-blue-600 mb-4">Head of Partnerships</p>
+              <p className="text-gray-600">
+                Bhavana focuses on connecting with partners to expand opportunities on the platform.
+              </p>
+            </div>
+            
+            {/* Akshara */}
+            <div className="bg-gray-50 p-8 rounded-xl shadow-sm text-center">
+              <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4"></div> {/* Placeholder image */}
+              <h3 className="text-xl font-semibold mb-2">Akshara</h3>
+              <p className="text-blue-600 mb-4">Head of Social Media and Content</p>
+              <p className="text-gray-600">
+                Akshara leads our social media presence and content creation efforts.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Mission Section */}
       <div className="py-16 bg-white">
         <div className="container mx-auto px-4">
@@ -62,42 +101,6 @@ export function AboutPage() {
               <h3 className="text-xl font-semibold text-center mb-4">Community</h3>
               <p className="text-gray-600 text-center">
                 We believe in strengthening local communities by connecting businesses with young talent in their area.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Team Section (Placeholder) */}
-      <div className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Our Team</h2>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-gray-50 p-8 rounded-xl shadow-sm text-center">
-              <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4"></div>
-              <h3 className="text-xl font-semibold mb-2">Jane Doe</h3>
-              <p className="text-blue-600 mb-4">Founder & CEO</p>
-              <p className="text-gray-600">
-                Passionate about creating opportunities for young people to gain valuable work experience.
-              </p>
-            </div>
-            
-            <div className="bg-gray-50 p-8 rounded-xl shadow-sm text-center">
-              <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4"></div>
-              <h3 className="text-xl font-semibold mb-2">John Smith</h3>
-              <p className="text-blue-600 mb-4">CTO</p>
-              <p className="text-gray-600">
-                Tech enthusiast focused on creating simple, accessible platforms for students and employers.
-              </p>
-            </div>
-            
-            <div className="bg-gray-50 p-8 rounded-xl shadow-sm text-center">
-              <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4"></div>
-              <h3 className="text-xl font-semibold mb-2">Emily Johnson</h3>
-              <p className="text-blue-600 mb-4">Head of Partnerships</p>
-              <p className="text-gray-600">
-                Building relationships with schools and businesses to create a strong network of opportunities.
               </p>
             </div>
           </div>
