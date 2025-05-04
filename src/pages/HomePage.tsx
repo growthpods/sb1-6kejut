@@ -138,7 +138,7 @@ export function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
             <Link
-              to="/jobs"
+              to="/find-jobs"
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg transition-colors flex items-center justify-center"
             >
               <Search className="w-5 h-5 mr-2" />
@@ -176,9 +176,9 @@ export function HomePage() {
                 Perfect for after school hours. Balance your studies with work experience.
               </p>
               <div className="text-center">
-                <Link 
-                  to="/jobs" 
-                  className="inline-flex items-center text-blue-600 font-medium hover:text-blue-800"
+<Link 
+                  to="/find-jobs" 
+                  className="inline-flex items-center text-purple-600 font-medium hover:text-purple-800"
                   onClick={() => setFilters({...filters, timeCommitment: 'Evening'})}
                 >
                   Browse Evening Jobs
@@ -198,8 +198,8 @@ export function HomePage() {
               </p>
               <div className="text-center">
                 <Link 
-                  to="/jobs" 
-                  className="inline-flex items-center text-purple-600 font-medium hover:text-purple-800"
+                  to="/find-jobs" 
+                  className="inline-flex items-center text-blue-600 font-medium hover:text-blue-800"
                   onClick={() => setFilters({...filters, timeCommitment: 'Weekend'})}
                 >
                   Browse Weekend Jobs
@@ -219,7 +219,7 @@ export function HomePage() {
               </p>
               <div className="text-center">
                 <Link 
-                  to="/jobs" 
+                  to="/find-jobs" 
                   className="inline-flex items-center text-green-600 font-medium hover:text-green-800"
                   onClick={() => setFilters({...filters, timeCommitment: 'Summer'})}
                 >
@@ -299,7 +299,7 @@ export function HomePage() {
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold">Featured Jobs</h2>
             <Link 
-              to="/jobs"
+              to="/find-jobs"
               className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
             >
               View All Jobs
@@ -310,7 +310,7 @@ export function HomePage() {
           {allJobs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {allJobs.slice(0, 6).map((job) => (
-                <Link key={job.id} to={`/jobs/${job.id}`} className="h-full">
+                <Link key={job.id} to={`/find-jobs/${job.id}`} className="h-full">
                   <JobCard job={job} />
                 </Link>
               ))}
@@ -323,7 +323,7 @@ export function HomePage() {
           
           <div className="text-center mt-12">
             <Link
-              to="/jobs"
+              to="/find-jobs"
               className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
             >
               Browse All Jobs
