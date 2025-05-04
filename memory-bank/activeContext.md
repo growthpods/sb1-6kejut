@@ -35,6 +35,8 @@ This file tracks the current work focus.
 - Update Supabase API keys in .env file
 
 ## Active Decisions
+- Updated the route for FindJobsPage to /find-jobs to be more explicit
+- Updated the header link to point to /find-jobs instead of /jobs
 - Using Google Gemini API instead of OpenRouter for better performance and reliability
 - Using the official @google/genai package for API integration
 - Using the streaming API for better response handling

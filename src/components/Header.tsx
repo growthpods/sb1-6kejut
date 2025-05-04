@@ -11,7 +11,7 @@ export function Header() {
         </Link>
 
         <div className="flex space-x-8">
-          <Link to="/jobs" className="hover:text-blue-400">Find Jobs</Link>
+          <Link to="/find-jobs" className="hover:text-blue-400">Find Jobs</Link>
           <Link to="/post-job" className="hover:text-blue-400">Post Job</Link>
           <Link to="/about" className="hover:text-blue-400">About us</Link>
         </div>

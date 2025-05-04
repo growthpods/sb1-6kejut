@@ -23,7 +23,7 @@ export default function App() {
           <main className="flex-grow">
             <Routes>
               <Route path="/" element={<HomePage />} />
-              <Route path="/jobs" element={<FindJobsPage />} />
+              <Route path="/find-jobs" element={<FindJobsPage />} />
               <Route path="/post-job" element={<PostJobPage />} />
               <Route path="/jobs/:id" element={<JobDetailsPage />} />
               <Route path="/about" element={<AboutPage />} />

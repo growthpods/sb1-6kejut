@@ -13,6 +13,8 @@ This file tracks what works, what's left to build, current status, and known iss
 - Enhanced job posting workflow to collect contact information
 - Explicit rejection responses for off-topic queries
 - Implemented a strict two-task limitation (job description crafting and job link parsing only)
+- Updated the route for FindJobsPage to /find-jobs to be more explicit
+- Updated the header link to point to /find-jobs instead of /jobs
 
 ## What's Left to Build
 - Debug the chat interface to properly display responses from the Gemini API
