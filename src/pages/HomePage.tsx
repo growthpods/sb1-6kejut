@@ -74,10 +74,10 @@ export function HomePage() {
 
       // Level filter
       const matchesLevel = filters.level === 'All' || job.level === filters.level;
-      
+
       // Time Commitment filter - Handle case where timeCommitment might not exist in the database yet
-      const matchesTimeCommitment = !filters.timeCommitment || 
-        ('timeCommitment' in job && job.timeCommitment === filters.timeCommitment);
+      const matchesTimeCommitment = !filters.timeCommitment ||
+        (job.timeCommitment && job.timeCommitment === filters.timeCommitment);
 
       // Date Posted filter
       const matchesDate = filters.datePosted === 'Any time' || (() => {
@@ -93,8 +93,8 @@ export function HomePage() {
         return true;
       })();
 
-      return matchesSearch && matchesLocation && matchesType && 
-             matchesLevel && matchesTimeCommitment && matchesDate;
+      return matchesSearch && matchesLocation && matchesType &&
+        matchesLevel && matchesTimeCommitment && matchesDate;
     });
   }, [allJobs, searchQuery, location, filters]);
 
@@ -160,76 +160,33 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* Time Commitment Section */}
-      <div className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Find Jobs That Fit Your Schedule</h2>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Evening Jobs */}
-            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Clock className="w-8 h-8 text-blue-600" />
-              </div>
-              <h3 className="text-2xl font-semibold text-center mb-4">Evening Jobs</h3>
-              <p className="text-gray-600 text-center mb-6">
-                Perfect for after school hours. Balance your studies with work experience.
-              </p>
-              <div className="text-center">
-<Link 
-                  to="/find-jobs" 
-                  className="inline-flex items-center text-blue-600 font-medium hover:text-blue-800"
-                  onClick={() => setFilters({...filters, timeCommitment: 'Evening'})}
-                >
-                  Browse Evening Jobs
-                  <ArrowRight className="w-4 h-4 ml-1" />
-                </Link>
-              </div>
-            </div>
-            
-            {/* Weekend Jobs */}
-            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Clock className="w-8 h-8 text-purple-600" />
-              </div>
-              <h3 className="text-2xl font-semibold text-center mb-4">Weekend Jobs</h3>
-              <p className="text-gray-600 text-center mb-6">
-                Keep your weekdays free for school and activities. Work on Saturdays and Sundays.
-              </p>
-              <div className="text-center">
-                <Link 
-                  to="/find-jobs" 
-                  className="inline-flex items-center text-purple-600 font-medium hover:text-purple-800"
-                  onClick={() => setFilters({...filters, timeCommitment: 'Weekend'})}
-                >
-                  Browse Weekend Jobs
-                  <ArrowRight className="w-4 h-4 ml-1" />
-                </Link>
-              </div>
-            </div>
-            
-            {/* Summer Jobs */}
-            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Clock className="w-8 h-8 text-green-600" />
-              </div>
-              <h3 className="text-2xl font-semibold text-center mb-4">Summer Jobs</h3>
-              <p className="text-gray-600 text-center mb-6">
-                Make the most of your summer break with full-time opportunities and internships.
-              </p>
-              <div className="text-center">
-                <Link 
-                  to="/find-jobs" 
-                  className="inline-flex items-center text-green-600 font-medium hover:text-green-800"
-                  onClick={() => setFilters({...filters, timeCommitment: 'Summer'})}
-                >
-                  Browse Summer Jobs
-                  <ArrowRight className="w-4 h-4 ml-1" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* How it Works Section */}
+      {/* Time Commitment Filters */}
+      <div className="flex justify-center space-x-4 mb-8">
+        <button
+          className={`px-4 py-2 rounded-full font-semibold text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.timeCommitment === 'Evening' ? 'bg-blue-200' : ''}`}
+          onClick={() => setFilters({...filters, timeCommitment: 'Evening'})}
+        >
+          Evening
+        </button>
+        <button
+          className={`px-4 py-2 rounded-full font-semibold text-purple-600 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 ${filters.timeCommitment === 'Weekend' ? 'bg-purple-200' : ''}`}
+          onClick={() => setFilters({...filters, timeCommitment: 'Weekend'})}
+        >
+          Weekend
+        </button>
+        <button
+          className={`px-4 py-2 rounded-full font-semibold text-green-600 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 ${filters.timeCommitment === 'Summer' ? 'bg-green-200' : ''}`}
+          onClick={() => setFilters({...filters, timeCommitment: 'Summer'})}
+        >
+          Summer
+        </button>
+        <button
+          className={`px-4 py-2 rounded-full font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 ${!filters.timeCommitment ? 'bg-gray-200' : ''}`}
+          onClick={() => setFilters({...filters, timeCommitment: undefined})}
+        >
+          All
+        </button>
       </div>
 
       {/* How it Works Section */}
@@ -307,9 +264,9 @@ export function HomePage() {
             </Link>
           </div>
           
-          {allJobs.length > 0 ? (
+          {filteredJobs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {allJobs.slice(0, 6).map((job) => (
+              {filteredJobs.slice(0, 6).map((job) => (
                 <Link key={job.id} to={`/find-jobs/${job.id}`} className="h-full">
                   <JobCard job={job} />
                 </Link>
