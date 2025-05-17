@@ -32,8 +32,20 @@ This file tracks what works, what's left to build, current status, and known iss
 - Successfully fetched and upserted 49 internships from RapidAPI using the 'Houston' filter after applying the unique constraint, bringing total RapidAPI jobs to 67.
 - Both `scripts/fetchRapidApiInternshipsMCP.js` and `netlify/functions/fetch-daily-jobs.js` now default to `location_filter: 'Texas'` and use mandatory "high school" keyword filters.
 - Successfully ran `scripts/fetchRapidApiInternshipsMCP.js` with 'Texas' and mandatory "high school" filters, fetching 33 jobs and increasing total RapidAPI jobs in DB to 85.
+- **CopilotKit Integration (PostJobPage):**
+    - Installed CopilotKit packages (`@copilotkit/react-core`, `@copilotkit/react-ui`, `@copilotkit/runtime`) and `@google/generative-ai`.
+    - Created Netlify function `netlify/functions/copilotkit-runtime.js` with `GoogleGenerativeAIAdapter` (using `gemini-2.0-flash`) and initial structure for `scrapeJobUrl` (Firecrawl) and `submitJobPosting` (Supabase) tools.
+    - Configured 60s timeout for `copilotkit-runtime` function in `netlify.toml`.
+    - Added CopilotKit styles to `src/main.tsx` and wrapped `src/App.tsx` with `<CopilotKit runtimeUrl>`.
+    - Rewrote `src/pages/PostJobPage.tsx` to use the `<CopilotChat />` component with a detailed system prompt.
+    - Added `GEMINI_API_KEY` to `.env` (from existing `VITE_GEMINI_API_KEY`) for use by the Netlify function.
 
 ## What's Left to Build
+- **CopilotKit - PostJobPage:**
+    - Implement a proper, non-mock Firecrawl API call from the `scrapeJobUrl` tool in `copilotkit-runtime.js`.
+    - Implement secure `employer_id` (user ID) handling for the `submitJobPosting` tool.
+    - Verify and refine stream handling in the `copilotkit-runtime.js` Netlify function for robust `CopilotChat` responses.
+    - Thoroughly test the new `PostJobPage` with CopilotKit, including tool invocation and job submission.
 - Debug the chat interface to properly display responses from the Gemini API.
 - Implement error handling for API failures.
 - Add unit tests for the Gemini API integration.
@@ -60,11 +72,13 @@ This file tracks what works, what's left to build, current status, and known iss
 - Successfully applied migration `20250516192600_add_unique_constraint_jobs_title_company_location.sql` to enable `ON CONFLICT` for job upserts.
 - Successfully ran `scripts/fetchRapidApiInternshipsMCP.js` first with `location_filter: 'Houston'`, fetching 49 jobs (total 67 RapidAPI jobs).
 - Subsequently, ran `scripts/fetchRapidApiInternshipsMCP.js` with `location_filter: 'Texas'` and mandatory "high school" filters, fetching 33 additional jobs and bringing the total count of RapidAPI-sourced jobs to 85.
-- Memory Bank files (`systemPatterns.md`, `techContext.md`, `activeContext.md`) updated to reflect new automation and direct `supabase-js` usage for this workflow.
+- Initial setup for replacing `PostJobPage` chat with CopilotKit is complete (packages, Netlify function, frontend provider, basic component rewrite).
+- Memory Bank files (`systemPatterns.md`, `techContext.md`, `activeContext.md`) updated to reflect new automation and direct `supabase-js` usage for this workflow, and initial CopilotKit setup.
 - UI improvements made to HomePage.tsx.
 
 ## Known Issues
-- Chat interface not displaying responses from the Gemini API.
+- PostJobPage chat (previous version): User's typed messages (via automation) did not appear in the interface. This is now being replaced by CopilotKit.
+- CopilotKit `scrapeJobUrl` tool: Currently uses mock data in the Netlify function environment due to `FirecrawlService`'s reliance on `window.mcpRequest`. Needs update for direct Firecrawl API calls from the backend.
 - Limited error handling for API failures.
 - No unit tests for the Gemini API integration.
 - Browser console not showing detailed logs for debugging.

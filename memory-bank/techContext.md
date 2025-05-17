@@ -46,6 +46,10 @@ This file documents the technologies used, development setup, technical constrai
 - @google/genai for Google Gemini API integration
 - dotenv for environment variable management
 - mime for content type handling
+- @copilotkit/react-core
+- @copilotkit/react-ui
+- @copilotkit/runtime
+- @google/generative-ai (for CopilotKit's GoogleGenerativeAIAdapter)
 
 ## API Integration Details
 
@@ -94,6 +98,21 @@ This file documents the technologies used, development setup, technical constrai
 - Explicit rejection responses for off-topic queries
 - Strict two-task limitation (job description crafting and job link parsing only)
 - Standardized rejection message for off-topic queries
+
+### CopilotKit (with Google Gemini for PostJobPage)
+- **Packages:** `@copilotkit/react-core`, `@copilotkit/react-ui`, `@copilotkit/runtime`, `@google/generative-ai`.
+- **Frontend:**
+    - `src/App.tsx` is wrapped with `<CopilotKit runtimeUrl="/.netlify/functions/copilotkit-runtime">`.
+    - `src/pages/PostJobPage.tsx` uses the `<CopilotChat />` component for its UI.
+    - System prompt for job posting is passed via the `instructions` prop to `<CopilotChat />`.
+- **Backend (Netlify Function: `netlify/functions/copilotkit-runtime.js`):**
+    - Implements the CopilotKit runtime using `CopilotRuntime`.
+    - Uses `GoogleGenerativeAIAdapter` with the `gemini-2.0-flash` model, configured with `GEMINI_API_KEY` environment variable.
+    - Function timeout set to 60 seconds in `netlify.toml`.
+    - **Tools Planned/Implemented:**
+        - `scrapeJobUrl` (Firecrawl): Currently uses mock data in the Node.js environment due to `FirecrawlService`'s reliance on `window.mcpRequest`. Needs adaptation for direct Firecrawl API calls from the backend.
+        - `submitJobPosting` (Supabase): Logic to insert job data into Supabase. Requires secure handling of `employer_id` (user context, potentially passed via `properties` from frontend).
+- **Styling:** CopilotKit default styles imported in `src/main.tsx`.
 
 ## Job Posting Workflow Implementation
 - Conversational interface for job data collection

@@ -13,3 +13,7 @@
 # Scheduled function to fetch daily jobs
 [functions."fetch-daily-jobs"]
   schedule = "0 8 * * *" # Runs daily at 8:00 AM UTC (2:00 AM CDT / 3:00 AM CST)
+
+# CopilotKit runtime function configuration
+[functions."copilotkit-runtime"]
+  timeout = 60 # Set timeout to 60 seconds

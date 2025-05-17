@@ -17,7 +17,11 @@
     "migrate:source": "node apply-source-migration.js"
   },
   "dependencies": {
+    "@copilotkit/react-core": "^1.8.12",
+    "@copilotkit/react-ui": "^1.8.12",
+    "@copilotkit/runtime": "^1.8.12",
     "@google/genai": "^0.9.0",
+    "@google/generative-ai": "^0.24.1",
     "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.39.7",

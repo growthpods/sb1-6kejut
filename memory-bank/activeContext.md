@@ -56,9 +56,22 @@ This file tracks the current work focus.
 - Updated `scripts/fetchRapidApiInternshipsMCP.js` and `netlify/functions/fetch-daily-jobs.js` to use `location_filter: 'Texas'` as the default, per user request for broader fetching.
 - Further updated both scripts to make "high school" a mandatory term in `title_filter` and `description_filter` in conjunction with other student-related terms, while keeping `location_filter: 'Texas'`.
 - Ran `scripts/fetchRapidApiInternshipsMCP.js` with the new 'Texas' and mandatory "high school" filters; 33 jobs were fetched and upserted, bringing the total RapidAPI job count to 85.
+- Attempted to test PostJobPage chat via browser automation; user's typed messages do not appear in the chat interface. Added temporary console logs to `handleSendMessage` to investigate.
+- Confirmed via browser test (no console logs appeared) that `handleSendMessage` likely isn't processing input due to `userInput` state not being updated by the `browser_action type` tool before the `click` action. Removed temporary console logs.
+- Installed CopilotKit packages (`@copilotkit/react-core`, `@copilotkit/react-ui`, `@copilotkit/runtime`) and `@google/generative-ai`.
+- Created Netlify function `netlify/functions/copilotkit-runtime.js` with `GoogleGenerativeAIAdapter` and initial structure for `scrapeJobUrl` (Firecrawl) and `submitJobPosting` (Supabase) tools.
+- Configured 60s timeout for `copilotkit-runtime` function in `netlify.toml`.
+- Added CopilotKit styles to `src/main.tsx`.
+- Wrapped `src/App.tsx` with `<CopilotKit runtimeUrl="/.netlify/functions/copilotkit-runtime">`.
+- Rewrote `src/pages/PostJobPage.tsx` to use `<CopilotChat />` component and defined a detailed system prompt.
+- Added `GEMINI_API_KEY` to `.env` file (copied from `VITE_GEMINI_API_KEY`).
 
 ## Next Steps
-- Debug the chat interface to properly display responses from the Gemini API.
+- Implement proper Firecrawl API call from `scrapeJobUrl` tool in Netlify function (currently uses mock).
+- Implement secure `employer_id` handling in `submitJobPosting` tool (e.g., via properties from frontend).
+- Verify and refine stream handling in Netlify function for `CopilotChat`.
+- Test the new `PostJobPage` with CopilotKit integration, including tool usage.
+- Debug PostJobPage chat interface to ensure user messages are correctly processed, displayed, and sent.
 - Implement error handling for API failures.
 - Add unit tests for the Gemini API integration.
 - Test the guardrails to ensure they're effective.
@@ -81,6 +94,9 @@ This file tracks the current work focus.
 - Using GitHub repository at https://github.com/growthpods/sb1-6kejut.git for version control.
 - The `location_filter` for RapidAPI Internships API in `scripts/fetchRapidApiInternshipsMCP.js` and `netlify/functions/fetch-daily-jobs.js` is set to 'Texas'.
 - The `title_filter` is `'"high school" (intern OR internship OR "summer job")"` and `description_filter` is `'"high school" (student OR college OR intern)"` in both scripts to make "high school" a mandatory term.
+- CopilotKit integration will use `gemini-2.0-flash`.
+- Firecrawl tool in CopilotKit backend will initially use mock data due to `window.mcpRequest` unavailability in Node.js; needs update for direct API call.
+- `employer_id` for job submissions via CopilotKit tool needs a secure passing mechanism from frontend context.
 - User has requested a more dynamic location filtering logic: specific user city in Texas (if known) > 'Houston' (as a fallback if specific city not applicable/found) > 'Texas' (general default). This needs further clarification for script implementation.
 - Storing API-sourced jobs with `source='RapidAPI'` to distinguish from manually posted jobs.
 - Implementing a data retention policy: delete RapidAPI-sourced jobs older than 2 months.

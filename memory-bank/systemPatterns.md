@@ -70,6 +70,20 @@ This file documents the system architecture, key technical decisions, design pat
 - Workflow pattern for conversation management
 - Task-specific system prompts pattern
 
+## CopilotKit Integration Architecture (New for PostJobPage)
+- **Frontend:**
+    - `CopilotKit` provider wraps the application (`src/App.tsx`).
+    - `CopilotChat` component (`@copilotkit/react-ui`) replaces the custom chat UI in `PostJobPage.tsx`.
+    - System prompt for job posting is configured via `CopilotChat`'s `instructions` prop.
+- **Backend (Netlify Function - `copilotkit-runtime.js`):**
+    - Uses `CopilotRuntime` from `@copilotkit/runtime`.
+    - Employs `GoogleGenerativeAIAdapter` to connect to Google Gemini (model `gemini-2.0-flash`).
+    - Exposes an HTTP endpoint (`/.netlify/functions/copilotkit-runtime`) for the frontend `CopilotChat`.
+    - Configured with a 60-second timeout in `netlify.toml`.
+    - **Tools/Actions:**
+        - `scrapeJobUrl`: Intended to use Firecrawl to scrape job URLs. Currently uses mock data in the Node.js environment due to `FirecrawlService` limitations (relies on `window.mcpRequest` which is unavailable in Netlify functions). Needs update for direct Firecrawl API call.
+        - `submitJobPosting`: Intended to save finalized job data to Supabase. Requires secure handling of `employer_id` (user context).
+
 ## Component Relationships
 
 ### Frontend Components
