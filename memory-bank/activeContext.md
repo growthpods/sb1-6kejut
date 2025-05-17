@@ -70,10 +70,10 @@ This file tracks the current work focus.
 - Updated `src/App.tsx` to pass `userId` (from `useAuth`) as a property to the `<CopilotKit>` provider.
 - Updated `submitJobPosting` tool in `netlify/functions/copilotkit-runtime.js` to use `userId` from `properties` (passed by frontend) as `employer_id`.
 - Rewrote `netlify/functions/copilotkit-runtime.js` handler to use `copilotRuntimeNodeHttpEndpoint` helper.
-- Refined the mock Node.js `res` object in `copilotkit-runtime.js` to be an instance of `PassThrough` stream with added properties/methods for status/header capture, to better integrate with `copilotRuntimeNodeHttpEndpoint` and Netlify's streaming response.
+- Implemented a `MockServerResponse` class (extending `PassThrough`) in `copilotkit-runtime.js` to more accurately emulate a Node.js `http.ServerResponse` for the CopilotKit handler, aiming to resolve Netlify CLI crashes.
 
 ## Next Steps
-- Verify and refine stream handling and the `PassThrough`-based mock `res` adaptation in `copilotkit-runtime.js` Netlify function for `CopilotChat`.
+- Verify and refine stream handling and the `MockServerResponse` adaptation in `copilotkit-runtime.js` Netlify function for `CopilotChat`.
 - Test the new `PostJobPage` with CopilotKit integration, including tool usage (Firecrawl and job submission with user context).
 - Debug PostJobPage chat interface to ensure user messages are correctly processed, displayed, and sent.
 - Implement error handling for API failures.

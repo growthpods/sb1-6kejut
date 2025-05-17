@@ -170,91 +170,72 @@ export async function handler(event, context) {
     mockReq.url = event.path; // Or event.rawUrl which includes query params
     mockReq.headers = event.headers;
 
-    // Create a PassThrough stream that will serve as our mock ServerResponse object
-    // and also as the body stream for the Netlify function response.
-    const mockRes = new PassThrough();
+    // Define a class that extends PassThrough to better emulate http.ServerResponse
+    class MockServerResponse extends PassThrough {
+      constructor(options) {
+        super(options);
+        this._capturedStatusCode = 200;
+        this._capturedHeaders = {};
+        this._headersSent = false;
+      }
 
-    // Attach properties and methods to make it resemble http.ServerResponse
-    // for header and status code handling.
-    mockRes._capturedStatusCode = 200; // Default status code
-    mockRes._capturedHeaders = {};
-    mockRes._headersSent = false;
-
-    // statusCode property
-    Object.defineProperty(mockRes, 'statusCode', {
-      get: function() { return this._capturedStatusCode; },
-      set: function(val) {
+      get statusCode() { return this._capturedStatusCode; }
+      set statusCode(val) {
         if (this._headersSent) {
-          console.warn("Tried to set statusCode after headers were sent.");
+          // console.warn("Tried to set statusCode after headers were sent."); // Optional logging
           return;
         }
         this._capturedStatusCode = val;
-      },
-      configurable: true,
-      enumerable: true
-    });
-    
-    // headersSent property
-    Object.defineProperty(mockRes, 'headersSent', {
-      get: function() { return this._headersSent; },
-      configurable: true,
-      enumerable: true
-    });
-
-    mockRes.setHeader = function(name, value) {
-      if (this._headersSent) {
-        console.warn("Tried to set header after headers were sent.");
-        return;
       }
-      this._capturedHeaders[name.toLowerCase()] = value;
-    };
 
-    mockRes.getHeader = function(name) {
-      return this._capturedHeaders[name.toLowerCase()];
-    };
+      get headersSent() { return this._headersSent; }
 
-    mockRes.removeHeader = function(name) {
-      if (this._headersSent) {
-        console.warn("Tried to remove header after headers were sent.");
-        return;
+      setHeader(name, value) {
+        if (this._headersSent) { return; }
+        this._capturedHeaders[name.toLowerCase()] = value;
       }
-      delete this._capturedHeaders[name.toLowerCase()];
-    };
 
-    mockRes.writeHead = function(statusCode, statusMessage, headers) {
-      if (this._headersSent) {
-        console.warn("Tried to writeHead after headers were sent.");
-        return;
+      getHeader(name) {
+        return this._capturedHeaders[name.toLowerCase()];
       }
-      this.statusCode = statusCode; // Uses the setter
-      let actualHeaders = headers;
-      if (typeof statusMessage === 'object' && statusMessage !== null) {
-        actualHeaders = statusMessage;
+
+      removeHeader(name) {
+        if (this._headersSent) { return; }
+        delete this._capturedHeaders[name.toLowerCase()];
       }
-      if (actualHeaders) {
-        for (const key in actualHeaders) {
-          this.setHeader(key, actualHeaders[key]);
+
+      writeHead(statusCode, statusMessage, headers) {
+        if (this._headersSent) { return; }
+        this.statusCode = statusCode;
+        let actualHeaders = headers;
+        if (typeof statusMessage === 'object' && statusMessage !== null) {
+          actualHeaders = statusMessage; // statusMessage is optional, headers can be 2nd arg
         }
-      }
-      this._headersSent = true;
-    };
-
-    // Wrap original .write and .end to manage _headersSent state
-    const originalWrite = mockRes.write;
-    mockRes.write = function(...args) {
-      if (!this._headersSent) {
+        if (actualHeaders) {
+          for (const key in actualHeaders) {
+            this.setHeader(key, actualHeaders[key]);
+          }
+        }
         this._headersSent = true;
       }
-      return originalWrite.apply(this, args);
-    };
 
-    const originalEnd = mockRes.end;
-    mockRes.end = function(...args) {
-      if (!this._headersSent) {
-        this._headersSent = true;
+      // Override write and end to manage _headersSent
+      write(...args) {
+        if (!this._headersSent) {
+          this._headersSent = true;
+        }
+        return super.write(...args);
       }
-      return originalEnd.apply(this, args);
-    };
+
+      end(...args) {
+        if (!this._headersSent) {
+          this._headersSent = true;
+        }
+        return super.end(...args);
+      }
+    }
+
+    const mockRes = new MockServerResponse();
 
     const copilotKitEndpointHandler = copilotRuntimeNodeHttpEndpoint({
       runtime, 
@@ -262,12 +243,12 @@ export async function handler(event, context) {
       endpoint: '/.netlify/functions/copilotkit-runtime',
     });
 
-    copilotKitEndpointHandler(mockReq, mockRes); // This will write to mockRes (PassThrough stream)
+    copilotKitEndpointHandler(mockReq, mockRes);
 
     return {
-      statusCode: mockRes.statusCode, // Use the captured/set statusCode
-      headers: mockRes._capturedHeaders, 
-      body: mockRes, // mockRes is the PassThrough stream itself
+      statusCode: mockRes.statusCode,
+      headers: mockRes._capturedHeaders, // Use the internal storage for headers
+      body: mockRes, // mockRes is the stream
       isBase64Encoded: false,
     };
 

@@ -36,7 +36,7 @@ This file tracks what works, what's left to build, current status, and known iss
     - Installed CopilotKit packages (`@copilotkit/react-core`, `@copilotkit/react-ui`, `@copilotkit/runtime`) and `@google/generative-ai`.
     - Rewrote `netlify/functions/copilotkit-runtime.js` to use `copilotRuntimeNodeHttpEndpoint` helper. This involved:
         - Adapting Netlify's `event` to a mock Node.js `req`.
-        - Refining the mock Node.js `res` object to be an instance of `PassThrough` stream with added properties/methods for status/header capture, aiming for better compatibility and to resolve `removeListener` errors.
+        - Implemented a `MockServerResponse` class (extending `PassThrough`) to more accurately emulate a Node.js `http.ServerResponse` for the CopilotKit handler, aiming to resolve Netlify CLI crashes related to stream listeners.
         - Configuring the runtime with `GoogleGenerativeAIAdapter` (using `gemini-2.0-flash`).
     - Updated `scrapeJobUrl` tool in the runtime to call Firecrawl API v1 directly (`https://api.firecrawl.dev/v1/scrape`) with payload `{ url, formats: ["markdown"], pageOptions: { onlyMainContent: true } }` using `FIRECRAWL_API_KEY`.
     - Updated `submitJobPosting` tool in the runtime to use `userId` passed from frontend `CopilotKit` provider properties as `employer_id`.
@@ -81,7 +81,7 @@ This file tracks what works, what's left to build, current status, and known iss
 ## Known Issues
 - PostJobPage chat (previous version): User's typed messages (via automation) did not appear in the interface. This is now being replaced by CopilotKit.
 - CopilotKit `scrapeJobUrl` tool: Updated to use Firecrawl API v1 and specific payload for markdown. Needs testing.
-- CopilotKit `copilotkit-runtime.js`: The mock req/res adaptation and stream handling for Netlify Functions is complex and needs thorough testing.
+- CopilotKit `copilotkit-runtime.js`: The `MockServerResponse` adaptation for Netlify Functions is complex and needs thorough testing to ensure stability and correct stream handling.
 - Limited error handling for API failures.
 - No unit tests for the Gemini API integration.
 - Browser console not showing detailed logs for debugging.

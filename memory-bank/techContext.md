@@ -108,7 +108,7 @@ This file documents the technologies used, development setup, technical constrai
 - **Backend (Netlify Function: `netlify/functions/copilotkit-runtime.js`):**
     - Implements the CopilotKit runtime using `CopilotRuntime` (configured with actions and `GoogleGenerativeAIAdapter`) and the `copilotRuntimeNodeHttpEndpoint` helper.
     - Adapts Netlify's `event` object to a Node.js `IncomingMessage`-like object (`mockReq`).
-    - The mock Node.js `ServerResponse` object (`mockRes`) is an instance of `PassThrough` stream, with added properties/methods for status/header capture, to better integrate with `copilotRuntimeNodeHttpEndpoint` and Netlify's streaming response capabilities.
+    - Implements a `MockServerResponse` class (extending `PassThrough` stream) to emulate a Node.js `http.ServerResponse`. This `mockRes` object captures status/headers and pipes data to the Netlify function's streaming response, aiming for better compatibility with `copilotRuntimeNodeHttpEndpoint` and Netlify CLI.
     - Uses `GoogleGenerativeAIAdapter` with the `gemini-2.0-flash` model, configured with `GEMINI_API_KEY` environment variable.
     - Function timeout set to 60 seconds in `netlify.toml`.
     - **Tools Planned/Implemented:**
