@@ -17,10 +17,9 @@
 [functions."fetch-daily-jobs"]
   schedule = "0 8 * * *" # Runs daily at 8:00 AM UTC (2:00 AM CDT / 3:00 AM CST)
 
-# CopilotKit runtime function configuration
-[functions."copilotkit-runtime"]
-  timeout = 60 # Set timeout to 60 seconds
-
-# CopilotKit runtime ESM function configuration
-[functions."copilotkit-runtime-esm"]
-  timeout = 60 # Set timeout to 60 seconds
+# CopilotKit runtime functions are removed as CopilotKit Cloud is being used.
+# [functions."copilotkit-runtime"]
+#   timeout = 60
+#
+# [functions."copilotkit-runtime-esm"]
+#   timeout = 60
