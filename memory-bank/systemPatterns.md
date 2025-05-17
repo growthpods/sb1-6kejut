@@ -124,7 +124,7 @@ This section outlines the different methods used to source job data from externa
 - **Automation:** A Netlify Scheduled Function (`netlify/functions/fetch-daily-jobs.js`) runs daily at 8:00 AM UTC (targets 2 AM CST).
 - **Process within the Netlify Function:**
     - **Data Retention:** Deletes jobs from the Supabase database where `source = 'RapidAPI'` and `posted_at` is older than 2 months. This is done using the `supabase-js` client library directly within the function.
-    - **Fetching:** Queries the RapidAPI using `axios`. It uses a `location_filter: 'Houston'` and other student-focused keyword filters. Pagination is implemented using the `offset` parameter to loop through results and fetch all available jobs for the specified criteria.
+    - **Fetching:** Queries the RapidAPI using `axios`. It uses a `location_filter: 'Texas'` (defaulting to a broader state-level search) and other student-focused keyword filters. Pagination is implemented using the `offset` parameter to loop through results and fetch all available jobs for the specified criteria. (User has also requested a dynamic logic: specific user city in TX > Houston fallback > Texas default, which is a future consideration for implementation).
     - **Filtering:** Performs additional client-side filtering for student-friendliness.
     - **Mapping:** Maps the fetched data to the internal database schema.
     - **Insertion:** Inserts new/updated jobs into the Supabase database using the `supabase-js` client library's `upsert` method with `onConflict` and `ignoreDuplicates: true` to handle duplicates based on title, company, and location.

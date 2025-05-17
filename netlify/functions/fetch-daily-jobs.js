@@ -59,7 +59,7 @@ async function deleteOldRapidApiJobs() {
 }
 
 async function fetchInternshipsFromRapidAPI() {
-  console.log('Fetching all internships from RapidAPI for Houston...');
+  console.log('Fetching all internships from RapidAPI for Texas...');
   if (!rapidApiKey || !rapidApiHost) {
     console.error('RapidAPI Key or Host is not configured in environment variables.');
     return [];
@@ -83,7 +83,7 @@ async function fetchInternshipsFromRapidAPI() {
         url: `https://${rapidApiHost}/active-jb-7d`,
         params: {
           title_filter: 'intern OR internship OR "high school" OR "summer job"',
-          location_filter: 'Houston', // Updated location filter
+          location_filter: 'Texas', // Updated to broader 'Texas' filter
           description_filter: 'student OR "high school" OR college OR intern',
           description_type: 'text',
           offset: currentOffset,
@@ -113,7 +113,7 @@ async function fetchInternshipsFromRapidAPI() {
       keepFetching = false; 
     }
   }
-  console.log(`Total internships fetched for Houston: ${allInternships.length}`);
+  console.log(`Total internships fetched for Texas: ${allInternships.length}`);
   return allInternships;
 }
 
@@ -227,7 +227,7 @@ export const handler = async (event, context) => {
     const rawInternships = await fetchInternshipsFromRapidAPI();
 
     if (rawInternships.length === 0) {
-      console.log('No new internships fetched from RapidAPI for Houston, TX.');
+      console.log('No new internships fetched from RapidAPI for Texas.');
       return { statusCode: 200, body: 'No new internships fetched.' };
     }
 

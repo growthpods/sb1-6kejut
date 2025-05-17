@@ -53,6 +53,7 @@ This file tracks the current work focus.
 - Re-ran `scripts/fetchRapidApiInternshipsMCP.js` with `location_filter: 'Houston'` and updated Supabase credentials; script initially failed to insert due to missing unique constraint for ON CONFLICT.
 - Created and applied migration `20250516192600_add_unique_constraint_jobs_title_company_location.sql` to add a UNIQUE constraint on (title, company, location) in the `jobs` table.
 - Successfully re-ran `scripts/fetchRapidApiInternshipsMCP.js` with `location_filter: 'Houston'`; 49 jobs were fetched and upserted. The total count of RapidAPI-sourced jobs is now 67.
+- Updated `scripts/fetchRapidApiInternshipsMCP.js` and `netlify/functions/fetch-daily-jobs.js` to use `location_filter: 'Texas'` as the default, per user request for broader fetching.
 
 ## Next Steps
 - Debug the chat interface to properly display responses from the Gemini API.
@@ -61,8 +62,8 @@ This file tracks the current work focus.
 - Test the guardrails to ensure they're effective.
 - Ensure the job posting workflow correctly collects contact information.
 - Finalize and test the `supabase-js` database calls within the Netlify function `fetch-daily-jobs.js`.
-- Monitor the daily Netlify scheduled function for successful execution and job fetching for Houston.
-- Potentially refine RapidAPI query parameters if Houston job fetching remains at 0.
+- Monitor the daily Netlify scheduled function for successful execution and job fetching for Texas.
+- Clarify and potentially implement dynamic location filtering for RapidAPI fetches (e.g., specific user city in Texas > Houston fallback > Texas default).
 - Review other parts of the application for consistency in Supabase interaction (MCP vs. direct `supabase-js`).
 
 ## Active Decisions
@@ -76,7 +77,8 @@ This file tracks the current work focus.
 - Collecting email or phone when no application URL is available.
 - Implementing a strict two-task limitation (job description crafting and job link parsing only).
 - Using GitHub repository at https://github.com/growthpods/sb1-6kejut.git for version control.
-- Using RapidAPI Internships API to fetch Houston internships daily via a Netlify Scheduled Function, using `location_filter: 'Houston'` and `offset` for pagination.
+- The default `location_filter` for RapidAPI Internships API in `scripts/fetchRapidApiInternshipsMCP.js` and `netlify/functions/fetch-daily-jobs.js` is now 'Texas' for broader job fetching.
+- User has requested a more dynamic location filtering logic: specific user city in Texas (if known) > 'Houston' (as a fallback if specific city not applicable/found) > 'Texas' (general default). This needs further clarification for script implementation.
 - Storing API-sourced jobs with `source='RapidAPI'` to distinguish from manually posted jobs.
 - Implementing a data retention policy: delete RapidAPI-sourced jobs older than 2 months.
 - Adding `career_site_url` field to store company career site URLs from RapidAPI (type updated, UI display removed).
