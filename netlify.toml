@@ -5,6 +5,9 @@
 [build.environment]
   NODE_VERSION = "20"
 
+[functions]
+  included_files = ["src/lib/**", "src/types/**"] # Include shared lib and types
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
