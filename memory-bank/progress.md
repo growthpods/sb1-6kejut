@@ -29,8 +29,9 @@ This file tracks what works, what's left to build, current status, and known iss
 - Updated UI (`JobCard.tsx`, `JobDetailsPage.tsx`) to remove job source information from display, per user request.
 - Updated `Job` type (`src/types/index.ts`) to include 'RapidAPI' as a source and add `careerSiteUrl` property (type update remains for data integrity).
 - Successfully added a unique constraint (title, company, location) to the `jobs` table via migration `20250516192600_add_unique_constraint_jobs_title_company_location.sql`.
-- Successfully fetched and upserted 49 internships from RapidAPI using the 'Houston' filter after applying the unique constraint. Total RapidAPI jobs in DB is now 67.
+- Successfully fetched and upserted 49 internships from RapidAPI using the 'Houston' filter after applying the unique constraint, bringing total RapidAPI jobs to 67.
 - Both `scripts/fetchRapidApiInternshipsMCP.js` and `netlify/functions/fetch-daily-jobs.js` now default to `location_filter: 'Texas'` and use mandatory "high school" keyword filters.
+- Successfully ran `scripts/fetchRapidApiInternshipsMCP.js` with 'Texas' and mandatory "high school" filters, fetching 33 jobs and increasing total RapidAPI jobs in DB to 85.
 
 ## What's Left to Build
 - Debug the chat interface to properly display responses from the Gemini API.
@@ -57,7 +58,8 @@ This file tracks what works, what's left to build, current status, and known iss
 - Initial manual data load from RapidAPI (for general US) performed, and old jobs deletion tested.
 - Updated `SUPABASE_SERVICE_ROLE_KEY` in `.env` file with the value provided by the user.
 - Successfully applied migration `20250516192600_add_unique_constraint_jobs_title_company_location.sql` to enable `ON CONFLICT` for job upserts.
-- Successfully ran `scripts/fetchRapidApiInternshipsMCP.js` with `location_filter: 'Houston'`, fetching 49 jobs and increasing the total count of RapidAPI-sourced jobs to 67.
+- Successfully ran `scripts/fetchRapidApiInternshipsMCP.js` first with `location_filter: 'Houston'`, fetching 49 jobs (total 67 RapidAPI jobs).
+- Subsequently, ran `scripts/fetchRapidApiInternshipsMCP.js` with `location_filter: 'Texas'` and mandatory "high school" filters, fetching 33 additional jobs and bringing the total count of RapidAPI-sourced jobs to 85.
 - Memory Bank files (`systemPatterns.md`, `techContext.md`, `activeContext.md`) updated to reflect new automation and direct `supabase-js` usage for this workflow.
 - UI improvements made to HomePage.tsx.
 

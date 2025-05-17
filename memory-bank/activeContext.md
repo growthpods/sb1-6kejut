@@ -55,6 +55,7 @@ This file tracks the current work focus.
 - Successfully re-ran `scripts/fetchRapidApiInternshipsMCP.js` with `location_filter: 'Houston'`; 49 jobs were fetched and upserted. The total count of RapidAPI-sourced jobs is now 67.
 - Updated `scripts/fetchRapidApiInternshipsMCP.js` and `netlify/functions/fetch-daily-jobs.js` to use `location_filter: 'Texas'` as the default, per user request for broader fetching.
 - Further updated both scripts to make "high school" a mandatory term in `title_filter` and `description_filter` in conjunction with other student-related terms, while keeping `location_filter: 'Texas'`.
+- Ran `scripts/fetchRapidApiInternshipsMCP.js` with the new 'Texas' and mandatory "high school" filters; 33 jobs were fetched and upserted, bringing the total RapidAPI job count to 85.
 
 ## Next Steps
 - Debug the chat interface to properly display responses from the Gemini API.
