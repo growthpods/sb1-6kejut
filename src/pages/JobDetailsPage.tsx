@@ -41,6 +41,7 @@ export function JobDetailsPage() {
              requirements: data.requirements || [],
              type: data.type, // Assuming 'type' is already correct case in DB or matches Job type
              level: data.level, // Assuming 'level' is already correct case in DB or matches Job type
+             educationLevel: data.education_level,
              timeCommitment: data.time_commitment,
              applicants: data.applicants,
              postedAt: new Date(data.posted_at),
@@ -168,6 +169,17 @@ export function JobDetailsPage() {
               <div className="flex items-center gap-2">
                 <Clock className="w-5 h-5 text-green-500" />
                 <span className="font-medium text-green-700">{job.timeCommitment} Availability</span>
+              </div>
+            )}
+            
+            {/* Display Education Level if available */}
+            {job.educationLevel && (
+              <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                  <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
+                </svg>
+                <span className="font-medium text-purple-700">{job.educationLevel} Education</span>
               </div>
             )}
           </div>

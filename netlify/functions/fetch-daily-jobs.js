@@ -82,9 +82,9 @@ async function fetchInternshipsFromRapidAPI() {
         method: 'GET',
         url: `https://${rapidApiHost}/active-jb-7d`,
         params: {
-          title_filter: '"high school" (intern OR internship OR "summer job")', // Made "high school" mandatory with other student terms
+          title_filter: 'intern OR internship OR "summer job"', // Removed "high school" requirement
           location_filter: 'Texas', // Updated to broader 'Texas' filter
-          description_filter: '"high school" (student OR college OR intern)', // Made "high school" mandatory with other student terms
+          description_filter: 'student OR college OR intern', // Removed "high school" requirement
           description_type: 'text',
           offset: currentOffset,
         },
@@ -152,7 +152,7 @@ function mapToJobSchema(internship) {
     description: internship.description_text || 'No description provided.',
     requirements: [], // Defaulting as not reliably parsed from this API
     type: 'Internship',
-    level: 'High School', 
+    level: 'Entry Level', 
     applicants: 0,
     posted_at: internship.date_posted || new Date().toISOString(),
     external_link: internship.url || null,
@@ -194,7 +194,7 @@ async function insertJobsToSupabase(jobs) {
   const { data, error } = await supabase
     .from('jobs')
     .upsert(jobs, {
-      onConflict: 'title,company,location', // Assumes a unique constraint exists on these columns
+      onConflict: 'title,company', // Using the existing unique constraint
       ignoreDuplicates: true // This makes it behave like ON CONFLICT DO NOTHING for the specified constraint
     });
 
