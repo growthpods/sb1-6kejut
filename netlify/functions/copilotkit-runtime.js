@@ -1,7 +1,7 @@
 // Use CommonJS syntax for Netlify Functions
 const { CopilotRuntime, GoogleGenerativeAIAdapter } = require("@copilotkit/runtime");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { supabase } = require("../../src/lib/supabase"); // Adjust path as needed
+const { supabase } = require('./lib/supabase-server'); // Use server-side Supabase client
 const axios = require('axios');
 const { Readable, PassThrough } = require('stream');
 
