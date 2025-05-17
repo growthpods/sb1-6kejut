@@ -36,17 +36,16 @@ This file tracks what works, what's left to build, current status, and known iss
     - Installed CopilotKit packages (`@copilotkit/react-core`, `@copilotkit/react-ui`, `@copilotkit/runtime`) and `@google/generative-ai`.
     - Created Netlify function `netlify/functions/copilotkit-runtime.js` with `GoogleGenerativeAIAdapter` (using `gemini-2.0-flash`).
     - Updated `scrapeJobUrl` tool in the runtime to call Firecrawl API v1 directly (`https://api.firecrawl.dev/v1/scrape`) with payload `{ url, formats: ["markdown"], pageOptions: { onlyMainContent: true } }` using `FIRECRAWL_API_KEY`.
-    - Implemented initial structure for `submitJobPosting` (Supabase) tool in the runtime.
+    - Updated `submitJobPosting` tool in the runtime to use `userId` passed from frontend `CopilotKit` provider properties as `employer_id`.
     - Configured 60s timeout for `copilotkit-runtime` function in `netlify.toml`.
-    - Added CopilotKit styles to `src/main.tsx` and wrapped `src/App.tsx` with `<CopilotKit runtimeUrl>`.
+    - Added CopilotKit styles to `src/main.tsx` and wrapped `src/App.tsx` with `<CopilotKit runtimeUrl properties={{ userId: user?.id }}>`.
     - Rewrote `src/pages/PostJobPage.tsx` to use the `<CopilotChat />` component with a detailed system prompt.
     - Added `GEMINI_API_KEY` and `FIRECRAWL_API_KEY` to `.env` for use by the Netlify function.
 
 ## What's Left to Build
 - **CopilotKit - PostJobPage:**
-    - Implement secure `employer_id` (user ID) handling for the `submitJobPosting` tool in `copilotkit-runtime.js`.
     - Verify and refine stream handling in the `copilotkit-runtime.js` Netlify function for robust `CopilotChat` responses.
-    - Thoroughly test the new `PostJobPage` with CopilotKit, including tool invocation (especially Firecrawl) and job submission.
+    - Thoroughly test the new `PostJobPage` with CopilotKit, including tool invocation (Firecrawl and job submission with user context).
 - Debug the chat interface to properly display responses from the Gemini API.
 - Implement error handling for API failures.
 - Add unit tests for the Gemini API integration.

@@ -102,7 +102,7 @@ This file documents the technologies used, development setup, technical constrai
 ### CopilotKit (with Google Gemini for PostJobPage)
 - **Packages:** `@copilotkit/react-core`, `@copilotkit/react-ui`, `@copilotkit/runtime`, `@google/generative-ai`.
 - **Frontend:**
-    - `src/App.tsx` is wrapped with `<CopilotKit runtimeUrl="/.netlify/functions/copilotkit-runtime">`.
+    - `src/App.tsx` is wrapped with `<CopilotKit runtimeUrl="/.netlify/functions/copilotkit-runtime" properties={{ userId: user?.id }}>` to pass authenticated user ID.
     - `src/pages/PostJobPage.tsx` uses the `<CopilotChat />` component for its UI.
     - System prompt for job posting is passed via the `instructions` prop to `<CopilotChat />`.
 - **Backend (Netlify Function: `netlify/functions/copilotkit-runtime.js`):**
@@ -111,7 +111,7 @@ This file documents the technologies used, development setup, technical constrai
     - Function timeout set to 60 seconds in `netlify.toml`.
     - **Tools Planned/Implemented:**
         - `scrapeJobUrl` (Firecrawl): Updated to make direct POST API calls to Firecrawl (`https://api.firecrawl.dev/v1/scrape`) using `axios` and `FIRECRAWL_API_KEY`. Payload `{ url, formats: ["markdown"], pageOptions: { onlyMainContent: true } }` is used to request markdown.
-        - `submitJobPosting` (Supabase): Logic to insert job data into Supabase. Requires secure handling of `employer_id` (user context, potentially passed via `properties` from frontend).
+        - `submitJobPosting` (Supabase): Logic to insert job data into Supabase. Uses `userId` passed from frontend via `properties` as `employer_id`.
 - **Styling:** CopilotKit default styles imported in `src/main.tsx`.
 
 ## Job Posting Workflow Implementation

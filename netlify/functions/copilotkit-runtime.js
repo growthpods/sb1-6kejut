@@ -37,7 +37,10 @@ export async function handler(event, context) {
     // const firecrawlService = getFirecrawlService(); // Not using this for direct API call
 
     const runtime = new CopilotRuntime({
-      actions: [
+      actions: ({ properties }) => { // Access properties here
+        const currentUserId = properties?.userId; // Get userId from properties passed by frontend
+
+        return [
         {
           name: "scrapeJobUrl",
           description: "Fetches and scrapes the markdown content of a job posting URL for analysis. Use this if a user provides a URL for a job posting.",
@@ -106,10 +109,20 @@ export async function handler(event, context) {
           ],
           handler: async (args) => {
             console.log("submitJobPosting tool called with args:", args);
-            // TODO: Get authenticated user ID. This needs to be passed securely.
-            // For now, using a placeholder or assuming it's part of args if passed from frontend context.
-            const employer_id = args.userId || process.env.DEFAULT_EMPLOYER_ID || "00000000-0000-0000-0000-000000000000"; 
+            const employer_id = currentUserId || process.env.DEFAULT_EMPLOYER_ID || "00000000-0000-0000-0000-000000000000"; 
             
+            if (!employer_id || employer_id === "00000000-0000-0000-0000-000000000000") {
+              // If DEFAULT_EMPLOYER_ID is also the placeholder, it means no real user.
+              // This check might need refinement based on how unauthenticated users are handled.
+              // For now, let's assume a valid employer_id (user) is required.
+              // However, the original PostJobPage allowed posting if user was logged in.
+              // CopilotKit might not have user context by default unless passed.
+              // The frontend now passes it via properties. If currentUserId is null/undefined, it means user is not logged in.
+              if (!currentUserId) {
+                 return "Error: You must be logged in to post a job. User ID is missing.";
+              }
+            }
+
             if (!args.applicationUrl && !args.contactEmail && !args.contactPhone) {
               return "Job posting failed: An application method (URL, email, or phone) is required.";
             }
@@ -144,7 +157,8 @@ export async function handler(event, context) {
             }
           },
         },
-      ],
+      ]; // End of actions array
+    }, // End of actions generator function
       serviceAdapter,
     });
 
