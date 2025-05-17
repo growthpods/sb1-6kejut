@@ -106,7 +106,8 @@ This file documents the technologies used, development setup, technical constrai
     - `src/pages/PostJobPage.tsx` uses the `<CopilotChat />` component for its UI.
     - System prompt for job posting is passed via the `instructions` prop to `<CopilotChat />`.
 - **Backend (Netlify Function: `netlify/functions/copilotkit-runtime.js`):**
-    - Implements the CopilotKit runtime using `CopilotRuntime`.
+    - Implements the CopilotKit runtime using `CopilotRuntime` (configured with actions and `GoogleGenerativeAIAdapter`) and the `copilotRuntimeNodeHttpEndpoint` helper.
+    - Adapts Netlify's `event` to a mock Node.js `req` and uses a `PassThrough` stream for a mock `res` to enable streaming responses via Netlify's function return format.
     - Uses `GoogleGenerativeAIAdapter` with the `gemini-2.0-flash` model, configured with `GEMINI_API_KEY` environment variable.
     - Function timeout set to 60 seconds in `netlify.toml`.
     - **Tools Planned/Implemented:**

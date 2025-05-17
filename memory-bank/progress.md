@@ -34,7 +34,7 @@ This file tracks what works, what's left to build, current status, and known iss
 - Successfully ran `scripts/fetchRapidApiInternshipsMCP.js` with 'Texas' and mandatory "high school" filters, fetching 33 jobs and increasing total RapidAPI jobs in DB to 85.
 - **CopilotKit Integration (PostJobPage):**
     - Installed CopilotKit packages (`@copilotkit/react-core`, `@copilotkit/react-ui`, `@copilotkit/runtime`) and `@google/generative-ai`.
-    - Created Netlify function `netlify/functions/copilotkit-runtime.js` with `GoogleGenerativeAIAdapter` (using `gemini-2.0-flash`).
+    - Rewrote `netlify/functions/copilotkit-runtime.js` to use `copilotRuntimeNodeHttpEndpoint` helper for request handling. This includes adapting Netlify's `event` to a mock Node.js `req` and using a `PassThrough` stream for a mock `res` to enable streaming responses. The runtime is configured with `GoogleGenerativeAIAdapter` (using `gemini-2.0-flash`).
     - Updated `scrapeJobUrl` tool in the runtime to call Firecrawl API v1 directly (`https://api.firecrawl.dev/v1/scrape`) with payload `{ url, formats: ["markdown"], pageOptions: { onlyMainContent: true } }` using `FIRECRAWL_API_KEY`.
     - Updated `submitJobPosting` tool in the runtime to use `userId` passed from frontend `CopilotKit` provider properties as `employer_id`.
     - Configured 60s timeout for `copilotkit-runtime` function in `netlify.toml`.
@@ -44,8 +44,7 @@ This file tracks what works, what's left to build, current status, and known iss
 
 ## What's Left to Build
 - **CopilotKit - PostJobPage:**
-    - Verify and refine stream handling in the `copilotkit-runtime.js` Netlify function for robust `CopilotChat` responses.
-    - Thoroughly test the new `PostJobPage` with CopilotKit, including tool invocation (Firecrawl and job submission with user context).
+    - Thoroughly test the new `PostJobPage` with CopilotKit, including the `copilotkit-runtime.js` handler (stream handling, mock req/res adaptation), tool invocation (Firecrawl and job submission with user context).
 - Debug the chat interface to properly display responses from the Gemini API.
 - Implement error handling for API failures.
 - Add unit tests for the Gemini API integration.
@@ -79,6 +78,7 @@ This file tracks what works, what's left to build, current status, and known iss
 ## Known Issues
 - PostJobPage chat (previous version): User's typed messages (via automation) did not appear in the interface. This is now being replaced by CopilotKit.
 - CopilotKit `scrapeJobUrl` tool: Updated to use Firecrawl API v1 and specific payload for markdown. Needs testing.
+- CopilotKit `copilotkit-runtime.js`: The mock req/res adaptation and stream handling for Netlify Functions is complex and needs thorough testing.
 - Limited error handling for API failures.
 - No unit tests for the Gemini API integration.
 - Browser console not showing detailed logs for debugging.

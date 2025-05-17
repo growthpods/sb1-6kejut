@@ -1,20 +1,21 @@
-import { CopilotRuntime, GoogleGenerativeAIAdapter } from "@copilotkit/runtime";
+import { CopilotRuntime, GoogleGenerativeAIAdapter, copilotRuntimeNodeHttpEndpoint } from "@copilotkit/runtime";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { supabase } from "../../src/lib/supabase"; // Adjust path as needed
-import axios from 'axios'; // Added for direct API calls
+import axios from 'axios'; 
+import { Readable, PassThrough } from 'stream'; // Import PassThrough
 
 // Load environment variables
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Helper to convert ReadableStream to string for Netlify response
-async function streamToString(stream) {
-  const chunks = [];
-  for await (const chunk of stream) {
-    chunks.push(Buffer.from(chunk));
-  }
-  return Buffer.concat(chunks).toString("utf-8");
-}
+// No longer needed if streaming directly
+// async function streamToString(stream) {
+//   const chunks = [];
+//   for await (const chunk of stream) {
+//     chunks.push(Buffer.from(chunk));
+//   }
+//   return Buffer.concat(chunks).toString("utf-8");
+// }
 
 export async function handler(event, context) {
   if (event.httpMethod !== "POST") {
@@ -35,11 +36,11 @@ export async function handler(event, context) {
     });
 
     // const firecrawlService = getFirecrawlService(); // Not using this for direct API call
-
+    
     const runtime = new CopilotRuntime({
-      actions: ({ properties }) => { // Access properties here
+      serviceAdapter, // Pass the adapter to the runtime constructor
+      actions: ({ properties }) => { // Define actions generator directly
         const currentUserId = properties?.userId; // Get userId from properties passed by frontend
-
         return [
         {
           name: "scrapeJobUrl",
@@ -159,23 +160,72 @@ export async function handler(event, context) {
         },
       ]; // End of actions array
     }, // End of actions generator function
-      serviceAdapter,
     });
 
-    const requestBody = JSON.parse(event.body || '{}');
-    const responseStream = runtime.stream(requestBody); // Pass only requestBody, adapter is in runtime
+    // Create a mock req object from the Netlify event
+    const mockReq = new Readable();
+    mockReq.push(event.body || '{}');
+    mockReq.push(null);
+    mockReq.method = event.httpMethod;
+    mockReq.url = event.path; // Or event.rawUrl which includes query params
+    mockReq.headers = event.headers;
 
-    // Netlify functions can return a ReadableStream for streaming responses
-    // Ensure headers are set correctly for event stream
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
+    // Create a PassThrough stream to act as the writable part of res & readable part for Netlify
+    const responseStream = new PassThrough();
+    
+    const capturedHeaders = {};
+    let capturedStatusCode = 200; // Default
+
+    const mockRes = {
+      writeHead: (statusCode, headers) => {
+        capturedStatusCode = statusCode;
+        for (const key in headers) {
+          capturedHeaders[key.toLowerCase()] = headers[key];
+        }
       },
+      setHeader: (name, value) => {
+        capturedHeaders[name.toLowerCase()] = value;
+      },
+      getHeader: (name) => {
+        return capturedHeaders[name.toLowerCase()];
+      },
+      removeHeader: (name) => {
+        delete capturedHeaders[name.toLowerCase()];
+      },
+      write: (chunk) => responseStream.write(chunk),
+      end: (chunk) => {
+        if (chunk) responseStream.write(chunk);
+        responseStream.end();
+      },
+      on: (eventName, listener) => responseStream.on(eventName, listener), // Delegate stream events
+      once: (eventName, listener) => responseStream.once(eventName, listener),
+      emit: (eventName, ...args) => responseStream.emit(eventName, ...args),
+      // Add other methods if needed by copilotRuntimeNodeHttpEndpoint's handler
+      get statusCode() { return capturedStatusCode; }, // Allow reading status code
+      get headersSent() { return Object.keys(capturedHeaders).length > 0; } // A simple check
+    };
+    
+    // Patch the res object to make it look more like a ServerResponse for copilotRuntimeNodeHttpEndpoint
+    Object.setPrototypeOf(mockRes, PassThrough.prototype);
+
+
+    const copilotKitEndpointHandler = copilotRuntimeNodeHttpEndpoint({
+      runtime, // The runtime instance now has actions and serviceAdapter configured
+      serviceAdapter, // Also pass adapter here as per Node HTTP example
+      endpoint: '/.netlify/functions/copilotkit-runtime', // The path this function is served at
+    });
+
+    // Call the handler. It will write to mockRes (which pipes to responseStream).
+    // This handler is likely synchronous in its setup and then handles async writes to res.
+    // We don't need to `await` it if it operates by writing to `res` and `res.end()`.
+    copilotKitEndpointHandler(mockReq, mockRes);
+
+    // Return the Netlify-compatible response with the stream
+    return {
+      statusCode: capturedStatusCode, // Will be updated by writeHead
+      headers: capturedHeaders, // Will be populated by setHeader/writeHead
+      body: responseStream,
       isBase64Encoded: false,
-      body: Readable.from(responseStream), // Convert the stream from CopilotKit if necessary
     };
 
   } catch (error) {

@@ -76,13 +76,15 @@ This file documents the system architecture, key technical decisions, design pat
     - `CopilotChat` component (`@copilotkit/react-ui`) replaces the custom chat UI in `PostJobPage.tsx`.
     - System prompt for job posting is configured via `CopilotChat`'s `instructions` prop.
 - **Backend (Netlify Function - `copilotkit-runtime.js`):**
-    - Uses `CopilotRuntime` from `@copilotkit/runtime`.
+    - Uses `CopilotRuntime` (configured with actions and `GoogleGenerativeAIAdapter`) and the `copilotRuntimeNodeHttpEndpoint` helper from `@copilotkit/runtime` to process chat requests.
+    - Adapts Netlify's `event` object to a Node.js `IncomingMessage`-like object (`mockReq`).
+    - Uses a `PassThrough` stream to create a Node.js `ServerResponse`-like object (`mockRes`) that captures the output from the CopilotKit handler and streams it back in the Netlify function's response.
     - Employs `GoogleGenerativeAIAdapter` to connect to Google Gemini (model `gemini-2.0-flash`).
     - Exposes an HTTP endpoint (`/.netlify/functions/copilotkit-runtime`) for the frontend `CopilotChat`.
     - Configured with a 60-second timeout in `netlify.toml`.
-    - **Tools/Actions:**
+    - **Tools/Actions (defined within `CopilotRuntime`):**
         - `scrapeJobUrl`: Uses `axios` to make a direct POST API call to Firecrawl (`https://api.firecrawl.dev/v1/scrape`) using `FIRECRAWL_API_KEY`. The payload is `{ url, formats: ["markdown"], pageOptions: { onlyMainContent: true } }` to request markdown content.
-        - `submitJobPosting`: Saves finalized job data to Supabase. Uses `userId` passed from frontend via `properties` as `employer_id`.
+        - `submitJobPosting`: Saves finalized job data to Supabase. Uses `userId` passed from frontend via `properties` (available to the actions generator) as `employer_id`.
 
 ## Component Relationships
 

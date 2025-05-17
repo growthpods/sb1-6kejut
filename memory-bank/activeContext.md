@@ -69,9 +69,10 @@ This file tracks the current work focus.
 - Updated `scrapeJobUrl` tool in `netlify/functions/copilotkit-runtime.js` to make direct API calls to Firecrawl (`https://api.firecrawl.dev/v1/scrape`) using the API key and correct payload (`{ url, formats: ["markdown"], pageOptions: { onlyMainContent: true } }`) for markdown.
 - Updated `src/App.tsx` to pass `userId` (from `useAuth`) as a property to the `<CopilotKit>` provider.
 - Updated `submitJobPosting` tool in `netlify/functions/copilotkit-runtime.js` to use `userId` from `properties` (passed by frontend) as `employer_id`.
+- Rewrote `netlify/functions/copilotkit-runtime.js` handler to use `copilotRuntimeNodeHttpEndpoint` helper, adapting Netlify `event` to a mock Node.js `req` and using a `PassThrough` stream to create a mock Node.js `res` for capturing the response and streaming it back via Netlify's function response format.
 
 ## Next Steps
-- Verify and refine stream handling in Netlify function for `CopilotChat`.
+- Verify and refine stream handling and mock req/res adaptation in `copilotkit-runtime.js` Netlify function for `CopilotChat`.
 - Test the new `PostJobPage` with CopilotKit integration, including tool usage (Firecrawl and job submission with user context).
 - Debug PostJobPage chat interface to ensure user messages are correctly processed, displayed, and sent.
 - Implement error handling for API failures.
