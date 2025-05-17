@@ -118,8 +118,21 @@ async function fetchInternshipsFromRapidAPI() {
 }
 
 function filterFetchedInternships(internships) {
-  console.log('Filtering fetched internships for student-friendliness...');
-  return internships.filter(internship => {
+  console.log('Filtering fetched internships for Texas location and student-friendliness...');
+  
+  // First filter for Texas location
+  const texasInternships = internships.filter(internship => {
+    const location = (internship.locations_derived && internship.locations_derived.length > 0) 
+      ? internship.locations_derived[0].toLowerCase() 
+      : (internship.location || '').toLowerCase();
+    
+    return location.includes('texas') || location.includes('tx');
+  });
+  
+  console.log(`Found ${texasInternships.length} Texas internships out of ${internships.length} total`);
+  
+  // Then filter for student-friendly internships
+  return texasInternships.filter(internship => {
     const title = (internship.title || '').toLowerCase();
     const description = (internship.description || '').toLowerCase();
     return (

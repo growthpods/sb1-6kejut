@@ -88,14 +88,23 @@ async function fetchInternships() {
   return allInternships;
 }
 
-// Function to filter internships (now primarily for student-friendliness as location is in API query)
+// Function to filter internships for student-friendliness and Texas location
 function filterInternships(internships) {
-  console.log('Filtering internships for student-friendliness...');
+  console.log('Filtering internships for student-friendliness and Texas location...');
   
-  // Location filter is now primarily handled by the API query parameter.
-  // We can add a stricter client-side filter if needed, but let's rely on the API first.
-  // Filter for student-friendly internships
-  const studentInternships = internships.filter(internship => {
+  // First filter for Texas location
+  const texasInternships = internships.filter(internship => {
+    const location = (internship.locations_derived && internship.locations_derived.length > 0) 
+      ? internship.locations_derived[0].toLowerCase() 
+      : (internship.location || '').toLowerCase();
+    
+    return location.includes('texas') || location.includes('tx');
+  });
+  
+  console.log(`Found ${texasInternships.length} Texas internships out of ${internships.length} total`);
+  
+  // Then filter for student-friendly internships
+  const studentInternships = texasInternships.filter(internship => {
     const title = (internship.title || '').toLowerCase();
     const description = (internship.description || '').toLowerCase();
     
