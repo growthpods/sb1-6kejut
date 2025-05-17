@@ -6,9 +6,10 @@ This file documents the system architecture, key technical decisions, design pat
 
 ### Frontend Architecture
 - React component-based architecture
-- Context API for state management
+- Context API for state management (AuthContext, EducationLevelContext)
 - Custom hooks for reusable logic
 - Page-based routing with React Router
+- Education level-based UI theming and content personalization
 
 ### Backend Architecture
 - Supabase for authentication, database, and storage (via MCP server)
@@ -24,6 +25,8 @@ This file documents the system architecture, key technical decisions, design pat
 - Guardrails system for LLM behavior control
 - Workflow-driven conversation management
 - Task-specific system prompts
+- AI-powered job classification for education level and time commitment
+- Intelligent parsing of job descriptions to determine suitability
 
 ## Key Technical Decisions
 
@@ -45,6 +48,8 @@ This file documents the system architecture, key technical decisions, design pat
 - System prompts with strict guardrails to ensure the LLM stays focused on job posting tasks only
 - Workflow-driven conversation to collect all required information
 - Strict two-task limitation (job description crafting and job link parsing only)
+- AI-powered job classification for education level and time commitment
+- Intelligent parsing of job descriptions to determine suitability
 
 ## Design Patterns in Use
 
@@ -52,8 +57,9 @@ This file documents the system architecture, key technical decisions, design pat
 - Component Composition for UI building blocks
 - Container/Presentational pattern for separation of concerns
 - Custom Hooks for reusable logic
-- Context API for state management
+- Context API for state management (AuthContext, EducationLevelContext)
 - Render Props for component sharing
+- Strategy pattern for education level-based UI theming
 
 ### Backend Patterns
 - Repository pattern for data access
@@ -69,6 +75,7 @@ This file documents the system architecture, key technical decisions, design pat
 - Guardrails pattern for LLM behavior control
 - Workflow pattern for conversation management
 - Task-specific system prompts pattern
+- Classification pattern for job education level and time commitment
 
 ## CopilotKit Integration Architecture (New for PostJobPage)
 - **Frontend:**
@@ -104,6 +111,8 @@ This file documents the system architecture, key technical decisions, design pat
 - JobPostingService (service for job posting)
   - GeminiClient (API client for Google Gemini)
   - FirecrawlService (service for web scraping)
+  - EducationLevelParser (service for education level classification)
+  - TimeCommitmentParser (service for time commitment classification)
 - PostJobPage (UI component for job posting)
   - Chat interface for job posting
   - Job data collection and submission
@@ -167,4 +176,23 @@ This section outlines the different methods used to source job data from externa
 - **Source Tracking:** Jobs sourced externally (e.g., via RapidAPI) are marked with a `source` field in the database (e.g., `source: 'RapidAPI'`).
 - **Duplicate Detection:** Mechanisms are in place or intended (e.g., `onConflict` in Supabase upserts for `scripts/scrapeJobs.ts`, or planned checks for RapidAPI script) to avoid re-adding existing internships.
 - **Data Mapping:** All externally sourced data is mapped to the internal `jobs` table schema.
-- **Time Commitment Detection:** Logic exists in some scripts (e.g., `fetchRapidApiInternshipsMCP.js`) to infer time commitment (Evening, Weekend, Summer) based on job titles and descriptions.
+- **Time Commitment Detection:** AI-powered TimeCommitmentParser analyzes job descriptions to determine time commitment (Evening, Weekend, Summer).
+- **Education Level Classification:** AI-powered EducationLevelParser analyzes job descriptions to determine suitability for high school or college students.
+
+## Education Level Selection Architecture
+
+### User Experience Flow
+- First-time visitors are presented with an education level selection modal
+- Users choose between High School and College options
+- Selection is stored in localStorage for persistence across visits
+- Header displays the selected education level with an option to change it
+- UI theme and content are personalized based on the selected education level
+- Job listings are filtered to show only jobs suitable for the selected education level
+
+### Technical Implementation
+- EducationLevelContext provides global state for the selected education level
+- EducationLevelModal component handles the initial selection process
+- Header component displays the current selection with an edit option
+- FindJobsPage, JobDetailsPage, and HomePage components adapt content based on selection
+- CSS variables and Tailwind classes are dynamically applied for theme switching
+- Database queries filter jobs based on the education_level field

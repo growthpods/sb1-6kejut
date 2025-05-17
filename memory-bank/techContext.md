@@ -16,7 +16,7 @@ This file documents the technologies used, development setup, technical constrai
 - PostgreSQL database (via Supabase MCP server)
 
 ### APIs
-- Google Gemini API for AI-powered job posting assistance
+- Google Gemini API for AI-powered job posting assistance and job classification
 - Firecrawl for web scraping job listings
 - RapidAPI Internships API for fetching internship listings
 
@@ -131,6 +131,38 @@ This file documents the technologies used, development setup, technical constrai
 - GitHub repository: https://github.com/growthpods/sb1-6kejut.git
 - Main branch for production code
 - Git for version control
+
+## Education Level Selection Implementation
+
+### Frontend Components
+- **EducationLevelContext:** React context for storing and managing the selected education level
+- **EducationLevelModal:** Modal component that appears for first-time visitors
+- **Header:** Updated to display the selected education level with an option to change it
+- **FindJobsPage, JobDetailsPage, HomePage:** Updated to filter and display content based on education level
+- **JobCard:** Updated to display education level badge
+
+### Database Schema
+- Added `education_level` field to the `jobs` table to store "High School" or "College" classification
+- Created migration scripts to add and update the field
+- Added unique constraint on (title, company, location) for proper job upserts
+
+### AI-Powered Job Classification
+- **EducationLevelParser:** Service that uses Google Gemini API to analyze job descriptions and determine education level
+- **TimeCommitmentParser:** Service that uses Google Gemini API to analyze job descriptions and determine time commitment
+- **JobPostingService:** Enhanced to use both parsers for job classification
+- **Scripts:**
+  - `updateJobEducationLevels.js`: Updates education level for existing jobs
+  - `updateJobTimeCommitments.js`: Updates time commitment for existing jobs
+  - `update-job-classifications.js`: Combined script to run both classification processes
+  - `fetchAndClassifyJobs.js`: Fetches new jobs and classifies them
+  - `scheduledJobFetch.js`: Scheduled job to fetch and classify new jobs
+
+### Styling
+- Implemented dynamic theming based on education level:
+  - High School: Green color scheme
+  - College: Purple color scheme
+- Used CSS variables and Tailwind classes for theme switching
+- Added education level badges to job cards
 
 ## Additional Data Sourcing Methods
 

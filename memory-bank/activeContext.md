@@ -3,6 +3,10 @@
 This file tracks the current work focus.
 
 ## Current Focus
+- Implementing education level selection feature for personalized user experience
+- Creating AI-powered job classification system for education level and time commitment
+- Enhancing job parsing to determine suitability for high school vs. college students
+- Updating RapidAPI integration to use AI parsers for job classification
 - Debugging the chat interface to properly display responses from the Gemini API
 - Implementing error handling for API failures
 - Adding unit tests for the Gemini API integration
@@ -16,6 +20,18 @@ This file tracks the current work focus.
 - Refactored Netlify function and related local script to use `supabase-js` client directly for database operations instead of MCP.
 
 ## Recent Changes
+- Created an education level selection modal that appears when users first visit the site
+- Implemented EducationLevelContext to store and manage the selected education level
+- Updated Header component to display the selected education level next to the logo
+- Added unique styling for each education level (High School: green, College: purple)
+- Created EducationLevelParser service using Gemini AI to analyze job descriptions
+- Created TimeCommitmentParser service to determine job time commitment patterns
+- Enhanced JobPostingService to use both parsers for job classification
+- Created scripts to update education level and time commitment for existing jobs
+- Updated fetchRapidApiInternshipsMCP.js to use AI parsers for job classification
+- Created scheduledJobFetch.js for running regular job fetching and classification
+- Updated SearchBar component to use "Texas" as the default location
+- Created database migrations for education level and time commitment fields
 - Replaced OpenRouter API with Google Gemini API for job posting functionality
 - Updated the API endpoint to use the correct Gemini model (gemini-2.0-flash)
 - Implemented the official @google/genai package for API integration
@@ -58,23 +74,22 @@ This file tracks the current work focus.
 - Ran `scripts/fetchRapidApiInternshipsMCP.js` with the new 'Texas' and mandatory "high school" filters; 33 jobs were fetched and upserted, bringing the total RapidAPI job count to 85.
 - Attempted to test PostJobPage chat via browser automation; user's typed messages do not appear in the chat interface. Added temporary console logs to `handleSendMessage` to investigate.
 - Confirmed via browser test (no console logs appeared) that `handleSendMessage` likely isn't processing input due to `userInput` state not being updated by the `browser_action type` tool before the `click` action. Removed temporary console logs.
-- Installed CopilotKit packages (`@copilotkit/react-core`, `@copilotkit/react-ui`, `@copilotkit/runtime`) and `@google/generative-ai`.
-- Created Netlify function `netlify/functions/copilotkit-runtime.js` with `GoogleGenerativeAIAdapter` and initial structure for `scrapeJobUrl` (Firecrawl) and `submitJobPosting` (Supabase) tools.
-- Configured 60s timeout for `copilotkit-runtime` function in `netlify.toml`.
-- Added CopilotKit styles to `src/main.tsx`.
-- Wrapped `src/App.tsx` with `<CopilotKit runtimeUrl="/.netlify/functions/copilotkit-runtime">`.
-- Rewrote `src/pages/PostJobPage.tsx` to use `<CopilotChat />` component and defined a detailed system prompt.
-- Added `GEMINI_API_KEY` to `.env` file (copied from `VITE_GEMINI_API_KEY`).
-- Added `FIRECRAWL_API_KEY` to `.env` file.
-- Updated `scrapeJobUrl` tool in `netlify/functions/copilotkit-runtime.js` to make direct API calls to Firecrawl (`https://api.firecrawl.dev/v1/scrape`) using the API key and correct payload (`{ url, formats: ["markdown"], pageOptions: { onlyMainContent: true } }`) for markdown.
-- Updated `src/App.tsx` to pass `userId` (from `useAuth`) as a property to the `<CopilotKit>` provider.
-- Updated `submitJobPosting` tool in `netlify/functions/copilotkit-runtime.js` to use `userId` from `properties` (passed by frontend) as `employer_id`.
-- Rewrote `netlify/functions/copilotkit-runtime.js` handler to use `copilotRuntimeNodeHttpEndpoint` helper.
-- Implemented a `MockServerResponse` class (extending `PassThrough`) in `copilotkit-runtime.js` to more accurately emulate a Node.js `http.ServerResponse` for the CopilotKit handler, aiming to resolve Netlify CLI crashes.
+- Installed the latest CopilotKit packages (`@copilotkit/react-core`, `@copilotkit/react-ui`).
+- Updated `src/App.tsx` to use the CopilotKit provider with CopilotKit Cloud:
+    - Added the public API key: `ck_pub_72cd57d7c553541743eedfba18fa94e8`
+    - Added guardrails to restrict topics to business, technology, general assistance, job posting, and internships
+    - Blocked topics like politics, explicit content, and harmful content
+- Updated `src/pages/PostJobPage.tsx` to use the simplified CopilotChat component
+- Added the useCopilotChatSuggestions hook to provide relevant suggestions to users
+- Removed the need for self-hosted runtime functions by using CopilotKit Cloud
 
 ## Next Steps
-- Verify and refine stream handling and the `MockServerResponse` adaptation in `copilotkit-runtime.js` Netlify function for `CopilotChat`.
-- Test the new `PostJobPage` with CopilotKit integration, including tool usage (Firecrawl and job submission with user context).
+- Monitor the education level selection feature for user feedback
+- Refine the AI job classification algorithms based on real-world usage
+- Consider adding more sophisticated analysis for job classification
+- Debug the blank page issue when loading the job posting page with CopilotKit Cloud
+- Test the CopilotChat component with CopilotKit Cloud to ensure it's working properly
+- Verify that the useCopilotChatSuggestions hook is providing relevant suggestions
 - Debug PostJobPage chat interface to ensure user messages are correctly processed, displayed, and sent.
 - Implement error handling for API failures.
 - Add unit tests for the Gemini API integration.
@@ -86,6 +101,11 @@ This file tracks the current work focus.
 - Review other parts of the application for consistency in Supabase interaction (MCP vs. direct `supabase-js`).
 
 ## Active Decisions
+- Implemented education level selection modal for first-time visitors
+- Created distinct visual styling for High School (green) and College (purple) modes
+- Using AI-powered job classification to determine education level suitability
+- Using AI-powered job classification to determine time commitment patterns
+- Added education_level field to jobs table to store High School or College classification
 - Updated the route for FindJobsPage to /find-jobs to be more explicit.
 - Updated the header link to point to /find-jobs instead of /jobs.
 - Using Google Gemini API instead of OpenRouter for better performance and reliability.
@@ -98,9 +118,11 @@ This file tracks the current work focus.
 - Using GitHub repository at https://github.com/growthpods/sb1-6kejut.git for version control.
 - The `location_filter` for RapidAPI Internships API in `scripts/fetchRapidApiInternshipsMCP.js` and `netlify/functions/fetch-daily-jobs.js` is set to 'Texas'.
 - The `title_filter` is `'"high school" (intern OR internship OR "summer job")"` and `description_filter` is `'"high school" (student OR college OR intern)"` in both scripts to make "high school" a mandatory term.
-- CopilotKit integration will use `gemini-2.0-flash`.
-- Firecrawl tool in CopilotKit backend now attempts direct API calls.
-- `employer_id` for job submissions via CopilotKit tool now uses `userId` passed from frontend context via `properties`.
+- Using CopilotKit Cloud instead of self-hosting for better reliability and easier maintenance.
+- Using CopilotKit Cloud public API key: `ck_pub_72cd57d7c553541743eedfba18fa94e8`
+- Adding guardrails to CopilotKit Cloud to restrict topics to business, technology, general assistance, job posting, and internships.
+- Blocking topics like politics, explicit content, and harmful content in CopilotKit Cloud.
+- Removed authentication requirement for job posting and instead collect employer email in the chat flow.
 - User has requested a more dynamic location filtering logic: specific user city in Texas (if known) > 'Houston' (as a fallback if specific city not applicable/found) > 'Texas' (general default). This needs further clarification for script implementation.
 - Storing API-sourced jobs with `source='RapidAPI'` to distinguish from manually posted jobs.
 - Implementing a data retention policy: delete RapidAPI-sourced jobs older than 2 months.
