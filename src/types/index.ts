@@ -13,7 +13,8 @@ export interface Job {
   externalLink?: string;
   applicationUrl?: string;
   companyLogo?: string;
-  source?: 'supabase' | 'google'; // Source of the job listing
+  source?: 'supabase' | 'google' | 'RapidAPI'; // Source of the job listing
+  careerSiteUrl?: string; // Added for company's career page
 }
 
 export interface User {

@@ -9,3 +9,7 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Scheduled function to fetch daily jobs
+[functions."fetch-daily-jobs"]
+  schedule = "0 8 * * *" # Runs daily at 8:00 AM UTC (2:00 AM CDT / 3:00 AM CST)

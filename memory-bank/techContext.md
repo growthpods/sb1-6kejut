@@ -21,8 +21,8 @@ This file documents the technologies used, development setup, technical constrai
 - RapidAPI Internships API for fetching internship listings
 
 ### Deployment
-- Netlify for frontend hosting
-- Supabase for backend services
+- Netlify for frontend hosting and scheduled serverless functions (Netlify Functions).
+- Supabase for backend services (database, auth, storage).
 
 ## Development Setup
 - Node.js and npm for package management
@@ -59,18 +59,27 @@ This file documents the technologies used, development setup, technical constrai
 - Rate limits: Standard Google API rate limits apply
 - System prompts with strict guardrails to ensure the LLM stays focused on job posting tasks only
 
-### Firecrawl API
-- Used for scraping job listings from external websites
-- Provides structured data extraction from web pages
-- Used in the job posting workflow to extract job details from URLs
+### Firecrawl API (via MCP Server)
+- **Mechanism:** Used for scraping job listings from employer-provided URLs.
+- **Process:**
+    - The `FirecrawlService` (`src/lib/firecrawl.ts`) initiates a request to a Firecrawl MCP server (`github.com/mendableai/firecrawl-mcp-server`).
+    - The MCP server scrapes the target URL and returns its content, typically as markdown.
+    - This raw scraped content is then processed by the Google Gemini LLM (via `JobPostingService`) to extract structured job details.
+- **Role:** Provides the initial raw content from web pages, which is then intelligently parsed by an LLM.
+- **Usage:** Integrated into the "Post a Job" feature when an employer provides a URL.
 
 ### RapidAPI Internships API
-- Used for fetching internship listings from external sources
-- API endpoint: https://internships-api.p.rapidapi.com/active-jb-7d
-- Authentication: API key via RapidAPI
-- Weekly scheduled job to fetch and store internships
-- Filters for Houston, TX and high school internships
-- Stores internship data in the jobs table with source='RapidAPI'
+- **Usage:** Automated daily fetching of internship listings.
+- **Mechanism:** A Netlify Scheduled Function (`netlify/functions/fetch-daily-jobs.js`) executes daily at 8:00 AM UTC.
+- **API Endpoint:** `https://internships-api.p.rapidapi.com/active-jb-7d`
+- **Authentication:** API key via RapidAPI (stored in environment variables).
+- **Process:**
+    - The Netlify Function first triggers a deletion of jobs older than 2 months from the Supabase database (where `source = 'RapidAPI'`) using the `supabase-js` client library.
+    - It then queries the RapidAPI using a `location_filter: 'Houston'` and other student-focused keyword filters. Pagination is implemented using the `offset` parameter to loop through results and attempt to fetch all available jobs for the specified criteria.
+    - Fetched data is filtered again for student-friendliness.
+    - Data is mapped to the internal schema and inserted/updated in the Supabase `jobs` table using the `supabase-js` client library's `upsert` method with `onConflict` and `ignoreDuplicates: true`.
+- **Source Tracking:** Jobs are stored with `source='RapidAPI'`.
+- **Note:** The `scripts/fetchRapidApiInternshipsMCP.js` script (which now also uses `supabase-js` directly) provides the foundational logic for this Netlify function and can be used for manual data fetches.
 
 ## LLM Guardrails Implementation
 - System prompts with clear role definition
@@ -88,7 +97,8 @@ This file documents the technologies used, development setup, technical constrai
 
 ## Job Posting Workflow Implementation
 - Conversational interface for job data collection
-- Web scraping integration for existing job postings
+- Web scraping integration (Firecrawl + Gemini LLM) for existing job postings from URLs
+- Direct text input processing by Gemini LLM for job descriptions
 - Structured data extraction from job descriptions
 - Contact information collection (email/phone) when no application URL is available
 - Data validation before submission
@@ -100,3 +110,13 @@ This file documents the technologies used, development setup, technical constrai
 - GitHub repository: https://github.com/growthpods/sb1-6kejut.git
 - Main branch for production code
 - Git for version control
+
+## Additional Data Sourcing Methods
+
+### File-Based Markdown Parsing (Alternative/Legacy)
+- **Mechanism:** A script (`scripts/scrapeJobs.ts`) processes a locally stored markdown file (`temp_scraped_markdown.md`).
+- **Process:**
+    - Assumes an external (unspecified) process scrapes a job site (e.g., Indeed) and saves the output to `temp_scraped_markdown.md`.
+    - The script then uses custom regex and string manipulation (`parseIndeedMarkdown` function) to parse this file.
+    - Data is inserted directly into Supabase (not via MCP).
+- **Role:** Provides a way to batch-import jobs if they are pre-scraped into a specific markdown format. Less flexible than API/LLM-based methods.

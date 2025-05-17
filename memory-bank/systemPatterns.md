@@ -115,10 +115,40 @@ This file documents the system architecture, key technical decisions, design pat
 - Store job posting data in the database
 - Redirect off-topic queries back to job posting tasks
 
-## External Job Data Integration
-- RapidAPI Internships API integration for Houston high school internships
-- Weekly scheduled job to fetch and store internships
-- Filtering mechanism for location (Houston, TX) and education level (high school)
-- Duplicate detection to prevent re-adding existing internships
-- Source tracking to distinguish API-sourced jobs from manually posted ones
-- Time commitment detection based on job title and description
+## External Job Data Integration & Scraping
+
+This section outlines the different methods used to source job data from external platforms.
+
+### 1. Automated Daily Job Fetching (RapidAPI Internships via Netlify Scheduled Function)
+- **Source:** RapidAPI Internships API (`https://internships-api.p.rapidapi.com/active-jb-7d`).
+- **Automation:** A Netlify Scheduled Function (`netlify/functions/fetch-daily-jobs.js`) runs daily at 8:00 AM UTC (targets 2 AM CST).
+- **Process within the Netlify Function:**
+    - **Data Retention:** Deletes jobs from the Supabase database where `source = 'RapidAPI'` and `posted_at` is older than 2 months. This is done using the `supabase-js` client library directly within the function.
+    - **Fetching:** Queries the RapidAPI using `axios`. It uses a `location_filter: 'Houston'` and other student-focused keyword filters. Pagination is implemented using the `offset` parameter to loop through results and fetch all available jobs for the specified criteria.
+    - **Filtering:** Performs additional client-side filtering for student-friendliness.
+    - **Mapping:** Maps the fetched data to the internal database schema.
+    - **Insertion:** Inserts new/updated jobs into the Supabase database using the `supabase-js` client library's `upsert` method with `onConflict` and `ignoreDuplicates: true` to handle duplicates based on title, company, and location.
+- **Key Characteristics:** Automated, scheduled daily, targets a specific location (Houston, TX), includes data retention, and uses Netlify Functions for serverless execution with direct Supabase interaction via `supabase-js`. The `scripts/fetchRapidApiInternshipsMCP.js` script (now also using `supabase-js` directly) serves as the basis for this function's logic and can be used for manual runs.
+
+### 2. URL Scraping with Firecrawl & AI Analysis (Job Posting Feature)
+- **Source:** Employer-provided URLs to existing job postings.
+- **Process:**
+    - Managed by `JobPostingService` (`src/lib/jobPostingService.ts`) and `FirecrawlService` (`src/lib/firecrawl.ts`).
+    - `FirecrawlService` calls a Firecrawl MCP server (`github.com/mendableai/firecrawl-mcp-server`) to scrape the content of the provided URL.
+    - The scraped content (markdown) is then passed to the Google Gemini LLM by `JobPostingService` for analysis, structuring, and extraction of job details.
+- **Key Characteristics:** Dynamic scraping of individual URLs, followed by LLM-based data extraction and structuring.
+
+### 3. File-Based Markdown Parsing (Alternative/Legacy Workflow)
+- **Source:** An external, unspecified process scrapes job sites (e.g., Indeed) and saves the raw HTML/markdown content to a temporary local file (`temp_scraped_markdown.md`).
+- **Process:**
+    - The `scripts/scrapeJobs.ts` script reads this local markdown file.
+    - It uses a custom parser (`parseIndeedMarkdown`) with string manipulation and regular expressions to extract job details. This parser is tailored to the expected format of the markdown (e.g., from Indeed).
+    - The extracted data is then inserted directly into the Supabase database using the Supabase client (not via MCP).
+    - The temporary markdown file is deleted after processing.
+- **Key Characteristics:** Relies on an external scraping step to produce a local file, then uses custom parsing logic. Less flexible than AI-based parsing.
+
+### General Considerations for Sourced Jobs
+- **Source Tracking:** Jobs sourced externally (e.g., via RapidAPI) are marked with a `source` field in the database (e.g., `source: 'RapidAPI'`).
+- **Duplicate Detection:** Mechanisms are in place or intended (e.g., `onConflict` in Supabase upserts for `scripts/scrapeJobs.ts`, or planned checks for RapidAPI script) to avoid re-adding existing internships.
+- **Data Mapping:** All externally sourced data is mapped to the internal `jobs` table schema.
+- **Time Commitment Detection:** Logic exists in some scripts (e.g., `fetchRapidApiInternshipsMCP.js`) to infer time commitment (Evening, Weekend, Summer) based on job titles and descriptions.

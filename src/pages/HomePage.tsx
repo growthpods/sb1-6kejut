@@ -128,25 +128,25 @@ export function HomePage() {
   return (
     <div className="relative">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-900 to-indigo-800 text-white py-20">
+      <div className="bg-gradient-to-r from-blue-900 to-indigo-800 text-white py-20 md:py-28"> {/* Increased padding */}
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl font-bold mb-6 leading-tight">
-            Find Your Perfect Job for<br />Evenings, Weekends, or Summer Break!
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 leading-tight"> {/* Responsive text size */}
+            Jobs That Fit Your Student Life
           </h1>
-          <p className="text-xl text-blue-100 mb-12 max-w-3xl mx-auto">
-            Connecting High School Students with Local Employers for Flexible Jobs
+          <p className="text-lg sm:text-xl text-blue-100 mb-12 max-w-3xl mx-auto">
+            Discover flexible part-time jobs, evening shifts, weekend gigs, and summer opportunities perfect for high school students.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mb-16"> {/* Increased bottom margin */}
             <Link
               to="/find-jobs"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg transition-colors flex items-center justify-center"
+              className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-10 rounded-lg transition-colors duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center text-lg shadow-lg" // Enhanced primary CTA
             >
               <Search className="w-5 h-5 mr-2" />
-              Browse Jobs
+              Find Student Jobs
             </Link>
             <Link
               to="/post-job"
-              className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg transition-colors flex items-center justify-center"
+              className="bg-transparent hover:bg-green-500 border-2 border-green-400 text-green-300 hover:text-white font-bold py-4 px-10 rounded-lg transition-colors duration-300 ease-in-out flex items-center justify-center text-lg" // Secondary CTA style
             >
               <Building2 className="w-5 h-5 mr-2" />
               Post a Job
@@ -154,98 +154,8 @@ export function HomePage() {
           </div>
           
           {/* Search Bar */}
-          <div className="bg-white p-4 rounded-xl shadow-lg max-w-4xl mx-auto">
+          <div className="bg-white p-6 rounded-xl shadow-2xl max-w-4xl mx-auto"> {/* Increased padding and shadow */}
             <SearchBar onSearch={handleSearch} defaultLocation="United States" />
-          </div>
-        </div>
-      </div>
-
-      {/* How it Works Section */}
-      {/* Time Commitment Filters */}
-      <div className="flex justify-center space-x-4 mb-8">
-        <button
-          className={`px-4 py-2 rounded-full font-semibold text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.timeCommitment === 'Evening' ? 'bg-blue-200' : ''}`}
-          onClick={() => setFilters({...filters, timeCommitment: 'Evening'})}
-        >
-          Evening
-        </button>
-        <button
-          className={`px-4 py-2 rounded-full font-semibold text-purple-600 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 ${filters.timeCommitment === 'Weekend' ? 'bg-purple-200' : ''}`}
-          onClick={() => setFilters({...filters, timeCommitment: 'Weekend'})}
-        >
-          Weekend
-        </button>
-        <button
-          className={`px-4 py-2 rounded-full font-semibold text-green-600 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 ${filters.timeCommitment === 'Summer' ? 'bg-green-200' : ''}`}
-          onClick={() => setFilters({...filters, timeCommitment: 'Summer'})}
-        >
-          Summer
-        </button>
-        <button
-          className={`px-4 py-2 rounded-full font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 ${!filters.timeCommitment ? 'bg-gray-200' : ''}`}
-          onClick={() => setFilters({...filters, timeCommitment: undefined})}
-        >
-          All
-        </button>
-      </div>
-
-      {/* How it Works Section */}
-      <div className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
-          
-          <div className="grid md:grid-cols-2 gap-12">
-            {/* For Students */}
-            <div className="bg-blue-50 p-8 rounded-xl shadow-sm">
-              <h3 className="text-2xl font-semibold mb-4 text-blue-800 flex items-center">
-                <GraduationCap className="w-6 h-6 mr-2" />
-                For Students
-              </h3>
-              <p className="text-lg mb-4">
-                InternJobs.ai makes it easy for high school students to find flexible, part-time jobs without the hassle of sign-ups.
-              </p>
-              <p className="text-gray-700 mb-6">
-                Browse available opportunities by simply clicking on job listings. No account needed – just find, apply, and start working!
-              </p>
-              <div className="flex justify-center">
-                <div className="bg-white p-4 rounded-lg shadow-md inline-block">
-                  <Search className="h-12 w-12 text-blue-600 mx-auto mb-2" />
-                  <span className="block text-center font-medium">Browse Jobs</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* For Employers */}
-            <div className="bg-green-50 p-8 rounded-xl shadow-sm">
-              <h3 className="text-2xl font-semibold mb-4 text-green-800 flex items-center">
-                <Building2 className="w-6 h-6 mr-2" />
-                For Employers
-              </h3>
-              <p className="text-lg mb-4">
-                Posting a job is quick and simple. Whether you're a small business or large company, you can create job listings with or without logging in.
-              </p>
-              <p className="text-gray-700 mb-6">
-                Just copy and paste your existing job link or create a new job posting in minutes.
-              </p>
-              <div className="flex justify-center">
-                <div className="flex items-center space-x-4">
-                  <div className="bg-white p-3 rounded-lg shadow-md text-center">
-                    <Building2 className="h-8 w-8 text-green-600 mx-auto" />
-                    <span className="text-sm">Post a Job</span>
-                  </div>
-                  <ArrowRight className="h-6 w-6 text-gray-400" />
-                  <div className="bg-white p-3 rounded-lg shadow-md text-center">
-                    <GraduationCap className="h-8 w-8 text-green-600 mx-auto" />
-                    <span className="text-sm">Student Applies</span>
-                  </div>
-                  <ArrowRight className="h-6 w-6 text-gray-400" />
-                  <div className="bg-white p-3 rounded-lg shadow-md text-center">
-                    <Briefcase className="h-8 w-8 text-green-600 mx-auto" />
-                    <span className="text-sm">Connect</span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -253,35 +163,37 @@ export function HomePage() {
       {/* Featured Jobs Section */}
       <div className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">Featured Jobs</h2>
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-10"> {/* Increased bottom margin */}
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4 sm:mb-0">Latest Opportunities</h2> {/* Changed text and color */}
             <Link 
               to="/find-jobs"
-              className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
+              className="text-blue-600 hover:text-blue-700 font-semibold flex items-center group text-lg" // Enhanced link
             >
-              View All Jobs
-              <ArrowRight className="w-4 h-4 ml-1" />
+              Explore All Jobs
+              <ArrowRight className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200" />
             </Link>
           </div>
           
           {filteredJobs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"> {/* Increased gap */}
               {filteredJobs.slice(0, 6).map((job) => (
-                <Link key={job.id} to={`/find-jobs/${job.id}`} className="h-full">
+                <Link key={job.id} to={`/find-jobs/${job.id}`} className="h-full group"> {/* Added group for card hover effects if any */}
                   <JobCard job={job} />
                 </Link>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-              <p className="text-gray-500">No jobs found. Check back soon!</p>
+            <div className="text-center py-16 bg-white rounded-lg shadow-md"> {/* Increased padding */}
+              <Search className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">No Jobs Found Right Now</h3>
+              <p className="text-gray-500">Please check back later or broaden your search.</p>
             </div>
           )}
           
-          <div className="text-center mt-12">
+          <div className="text-center mt-16"> {/* Increased top margin */}
             <Link
               to="/find-jobs"
-              className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 text-lg" // Enhanced button
             >
               Browse All Jobs
             </Link>
@@ -289,31 +201,80 @@ export function HomePage() {
         </div>
       </div>
 
+      {/* How it Works Section */}
+      <div className="py-16 md:py-24 bg-white"> {/* Increased padding */}
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-gray-800">Simple Steps to Get Started</h2> {/* Changed text, increased bottom margin */}
+          
+          <div className="grid md:grid-cols-2 gap-10 md:gap-16"> {/* Increased gap */}
+            {/* For Students */}
+            <div className="bg-blue-50 p-8 md:p-10 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"> {/* Enhanced shadow and hover */}
+              <h3 className="text-2xl md:text-3xl font-semibold mb-6 text-blue-700 flex items-center">
+                <GraduationCap className="w-8 h-8 mr-3" /> {/* Increased icon size and margin */}
+                Students: Find Your Fit
+              </h3>
+              <p className="text-lg text-gray-700 mb-4">
+                Effortlessly browse flexible jobs. No sign-up needed to explore opportunities.
+              </p>
+              <p className="text-gray-600 mb-8">
+                Simply click, discover, and apply directly. Your next job is just a few clicks away!
+              </p>
+              <div className="flex justify-center">
+                <Link to="/find-jobs" className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-300 flex items-center text-md">
+                  <Search className="w-5 h-5 mr-2" />
+                  Start Browsing
+                </Link>
+              </div>
+            </div>
+            
+            {/* For Employers */}
+            <div className="bg-green-50 p-8 md:p-10 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"> {/* Enhanced shadow and hover */}
+              <h3 className="text-2xl md:text-3xl font-semibold mb-6 text-green-700 flex items-center">
+                <Building2 className="w-8 h-8 mr-3" /> {/* Increased icon size and margin */}
+                Employers: Post with Ease
+              </h3>
+              <p className="text-lg text-gray-700 mb-4">
+                Reach talented students quickly. Post jobs with or without an account.
+              </p>
+              <p className="text-gray-600 mb-8">
+                Use our AI assistant or paste a job link. Connecting with candidates is simple.
+              </p>
+              <div className="flex justify-center">
+                 <Link to="/post-job" className="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-300 flex items-center text-md">
+                  <Briefcase className="w-5 h-5 mr-2" />
+                  Post a Job Opening
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Why Choose Us Section */}
-      <div className="bg-white py-16">
+      <div className="bg-gray-100 py-16 md:py-24"> {/* Changed background, increased padding */}
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-8">Why Choose Us?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-gray-50 p-6 rounded-xl shadow-sm">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Briefcase className="h-8 w-8 text-blue-600" />
+          <h2 className="text-3xl md:text-4xl font-bold mb-16 text-gray-800">Why InternJobs.ai?</h2> {/* Changed text, increased bottom margin */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12"> {/* Increased gap */}
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1"> {/* Enhanced card */}
+              <div className="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"> {/* Larger icon container */}
+                <Briefcase className="h-10 w-10 text-blue-600" /> {/* Larger icon */}
               </div>
-              <h3 className="text-xl font-semibold mb-2">Flexible Opportunities</h3>
-              <p className="text-gray-600">Find jobs that fit your schedule - evenings, weekends, or summer breaks.</p>
+              <h3 className="text-xl font-semibold mb-3 text-gray-700">Flexible for You</h3>
+              <p className="text-gray-600">Discover jobs that perfectly fit your student schedule—evenings, weekends, or summer breaks.</p>
             </div>
-            <div className="bg-gray-50 p-6 rounded-xl shadow-sm">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Search className="h-8 w-8 text-blue-600" />
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1"> {/* Enhanced card */}
+              <div className="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"> {/* Larger icon container, different color */}
+                <Search className="h-10 w-10 text-green-600" /> {/* Larger icon */}
               </div>
-              <h3 className="text-xl font-semibold mb-2">Easy Filtering</h3>
-              <p className="text-gray-600">Quickly find relevant jobs with our powerful search and filter tools.</p>
+              <h3 className="text-xl font-semibold mb-3 text-gray-700">Simple & Direct</h3>
+              <p className="text-gray-600">No lengthy sign-ups. Find and apply for jobs quickly and easily.</p>
             </div>
-            <div className="bg-gray-50 p-6 rounded-xl shadow-sm">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <GraduationCap className="h-8 w-8 text-blue-600" />
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1"> {/* Enhanced card */}
+              <div className="bg-purple-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"> {/* Larger icon container, different color */}
+                <GraduationCap className="h-10 w-10 text-purple-600" /> {/* Larger icon */}
               </div>
-              <h3 className="text-xl font-semibold mb-2">Career Growth</h3>
-              <p className="text-gray-600">Gain valuable experience and kickstart your professional journey while still in high school.</p>
+              <h3 className="text-xl font-semibold mb-3 text-gray-700">Gain Experience</h3>
+              <p className="text-gray-600">Kickstart your career with valuable work experience while you're still in school.</p>
             </div>
           </div>
         </div>

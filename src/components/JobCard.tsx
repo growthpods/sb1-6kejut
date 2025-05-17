@@ -62,13 +62,7 @@ export function JobCard({ job, showApplyButton = true }: JobCardProps) {
             {job.timeCommitment}
           </span>
         )}
-        {/* Show source badge if from Google */}
-        {job.source === 'google' && (
-          <span className="px-3 py-1 bg-red-50 text-red-700 rounded-full text-sm flex items-center">
-            <Globe className="w-3 h-3 mr-1" />
-            Google Jobs
-          </span>
-        )}
+        {/* All source badges removed as per user request */}
       </div>
       
       {job.description && (

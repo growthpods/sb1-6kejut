@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Briefcase, MapPin, Calendar, Check, Clock, ExternalLink } from 'lucide-react';
+import { Briefcase, MapPin, Calendar, Check, Clock, ExternalLink } from 'lucide-react'; // Removed Globe
 import type { Job } from '../types';
 import { supabase } from '../lib/supabase';
 
@@ -31,14 +31,27 @@ export function JobDetailsPage() {
         if (dbError) throw dbError;
 
         if (data) {
-           // Ensure postedAt is a Date object
-           // Ensure posted_at is a Date object
-           const jobData = {
-             ...data,
-             posted_at: new Date(data.posted_at)
+           // Map Supabase snake_case fields to our camelCase Job type
+           const jobData: Job = {
+             id: data.id,
+             title: data.title,
+             company: data.company,
+             location: data.location,
+             description: data.description,
+             requirements: data.requirements || [],
+             type: data.type, // Assuming 'type' is already correct case in DB or matches Job type
+             level: data.level, // Assuming 'level' is already correct case in DB or matches Job type
+             timeCommitment: data.time_commitment,
+             applicants: data.applicants,
+             postedAt: new Date(data.posted_at),
+             externalLink: data.external_link,
+             applicationUrl: data.application_url,
+             companyLogo: data.company_logo,
+             source: data.source,
+             // careerSiteUrl needs to be added to Job type. For now, handle if present.
+             ...(data.career_site_url && { careerSiteUrl: data.career_site_url }),
            };
-           // Map database fields to Job type if necessary (assuming direct mapping for now)
-           setJob(jobData as Job);
+           setJob(jobData);
         } else {
           setJob(null); // Job not found
         }
@@ -73,7 +86,7 @@ export function JobDetailsPage() {
           <div className="flex items-start justify-between">
             <div className="flex gap-6">
               <img
-                src={job.company_logo || `https://ui-avatars.com/api/?name=${job.company}`}
+                src={job.companyLogo || `https://ui-avatars.com/api/?name=${job.company}`}
                 alt={`${job.company} logo`}
                 className="w-16 h-16 rounded-lg object-contain"
               />
@@ -82,11 +95,11 @@ export function JobDetailsPage() {
                 <p className="text-xl text-gray-600 mt-1">{job.company}</p>
 
                 {/* Time Commitment Badge */}
-                {job.time_commitment && (
+                {job.timeCommitment && (
                   <div className="mt-2">
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                       <Clock className="w-4 h-4 mr-1" />
-                      {job.time_commitment} Availability
+                      {job.timeCommitment} Availability
                     </span>
                   </div>
                 )}
@@ -95,10 +108,10 @@ export function JobDetailsPage() {
 
             {/* Buttons for Apply and Career Site */}
             <div className="flex flex-col items-end gap-4">
-              {/* Apply Button - Use application_url or external_link */}
-              {(job.application_url || job.external_link) && (
+              {/* Apply Button - Use applicationUrl or externalLink */}
+              {(job.applicationUrl || job.externalLink) && (
                 <a
-                  href={job.application_url || job.external_link}
+                  href={job.applicationUrl || job.externalLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
@@ -109,9 +122,11 @@ export function JobDetailsPage() {
               )}
 
               {/* Career Site Button */}
-              {job.career_site_url && (
+              {/* @ts-ignore TODO: Add careerSiteUrl to Job type */}
+              {job.careerSiteUrl && (
                 <a
-                  href={job.career_site_url}
+                  // @ts-ignore
+                  href={job.careerSiteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center px-6 py-3 rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors"
@@ -122,7 +137,7 @@ export function JobDetailsPage() {
               )}
 
               {/* Display if no apply link is available */}
-              {!(job.application_url || job.external_link) && !job.career_site_url && (
+              {!(job.applicationUrl || job.externalLink) && !(job as any).careerSiteUrl && (
                 <span className="px-6 py-3 rounded-lg bg-gray-400 text-white cursor-not-allowed">
                   Links Unavailable
                 </span>
@@ -141,24 +156,18 @@ export function JobDetailsPage() {
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-gray-400" />
-              <span>Posted: {new Date(job.posted_at).toLocaleDateString()}</span>
+              <span>Posted: {new Date(job.postedAt).toLocaleDateString()}</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="w-5 h-5 text-gray-400" />
               <span>{job.level || 'N/A'}</span>
             </div>
-            {/* Display Source */}
-            {job.source && (
-              <div className="flex items-center gap-2">
-                <Briefcase className="w-5 h-5 text-gray-400" /> {/* Using Briefcase icon, can change if needed */}
-                <span>Source: {job.source}</span>
-              </div>
-            )}
-            {/* Handle case where time_commitment might not exist in the database yet */}
-            {job.time_commitment && (
+            {/* Source display removed as per user request */}
+            {/* Handle case where timeCommitment might not exist in the database yet */}
+            {job.timeCommitment && (
               <div className="flex items-center gap-2">
                 <Clock className="w-5 h-5 text-green-500" />
-                <span className="font-medium text-green-700">{job.time_commitment} Availability</span>
+                <span className="font-medium text-green-700">{job.timeCommitment} Availability</span>
               </div>
             )}
           </div>

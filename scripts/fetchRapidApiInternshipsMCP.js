@@ -7,8 +7,22 @@ import { dirname, join } from 'path';
 // Initialize dotenv
 dotenv.config();
 
-// Get Supabase project ID from environment variables
-const supabaseProjectId = process.env.SUPABASE_PROJECT_ID || 'jhboikdocmcnpvbtanwo';
+// Get Supabase credentials from environment variables
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Initialize Supabase client
+import { createClient } from '@supabase/supabase-js';
+let supabase;
+if (supabaseUrl && supabaseServiceRoleKey) {
+  supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: { persistSession: false }
+  });
+} else {
+  console.error('Supabase URL or Service Role Key is not configured. Script cannot interact with Supabase.');
+  // process.exit(1); // Optionally exit if Supabase connection is critical
+}
+
 
 // Get current file's directory
 const __filename = fileURLToPath(import.meta.url);
@@ -20,69 +34,68 @@ const rapidApiHost = process.env.RAPIDAPI_INTERNSHIPS_HOST;
 
 // Function to fetch internships from RapidAPI
 async function fetchInternships() {
-  console.log('Fetching internships from RapidAPI...');
-  
-  try {
-    // Set up the request options with query parameters
-    const options = {
-      method: 'GET',
-      url: 'https://internships-api.p.rapidapi.com/active-jb-7d',
-      params: {
-        title_filter: 'intern OR internship OR "high school" OR "summer job"',
-        location_filter: 'United States',
-        description_filter: 'student OR "high school" OR college OR intern',
-        description_type: 'text'
-      },
-      headers: {
-        'x-rapidapi-key': rapidApiKey,
-        'x-rapidapi-host': rapidApiHost
-      }
-    };
-    
-    // Make the request to RapidAPI
-    console.log('Making request to RapidAPI...');
-    const response = await axios.request(options);
-    
-    if (!response.data) {
-      console.error('No data returned from RapidAPI');
-      return [];
-    }
-    
-    console.log(`Received ${response.data.length} internships from RapidAPI`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching internships from RapidAPI:', error);
+  console.log('Fetching all internships from RapidAPI for Houston...');
+  if (!rapidApiKey || !rapidApiHost) {
+    console.error('RapidAPI Key or Host is not configured in environment variables.');
     return [];
   }
+
+  let allInternships = [];
+  let currentOffset = 0;
+  // const pageSize = 50; // API example uses 10, let's try a larger size if supported, otherwise API might cap it.
+  let keepFetching = true;
+  let page = 1;
+
+  while (keepFetching) {
+    console.log(`Fetching page ${page} with offset ${currentOffset}...`);
+    try {
+      const options = {
+        method: 'GET',
+        url: `https://${rapidApiHost}/active-jb-7d`,
+        params: {
+          title_filter: 'intern OR internship OR "high school" OR "summer job"',
+          location_filter: 'Houston', // Location filter set to Houston as per user request
+          description_filter: 'student OR "high school" OR college OR intern',
+          description_type: 'text',
+          offset: currentOffset,
+        },
+        headers: {
+          'x-rapidapi-key': rapidApiKey,
+          'x-rapidapi-host': rapidApiHost
+        }
+      };
+      const response = await axios.request(options);
+      
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        console.log(`Received ${response.data.length} internships on page ${page}.`);
+        allInternships = allInternships.concat(response.data);
+        currentOffset += response.data.length; 
+        page++;
+        if (response.data.length < 10) { // Heuristic based on observed API behavior / example
+             console.log('Likely fetched all available jobs for the current filter (received less than 10 items).');
+             keepFetching = false;
+        }
+      } else {
+        console.log(`No more internships found on page ${page} or unexpected response.`);
+        keepFetching = false; 
+      }
+    } catch (error) {
+      console.error(`Error fetching internships from RapidAPI on page ${page}:`, error.response ? error.response.data : error.message);
+      keepFetching = false; 
+    }
+  }
+  console.log(`Total internships fetched for Houston: ${allInternships.length}`);
+  return allInternships;
 }
 
-// Function to filter internships for US-based opportunities
+// Function to filter internships (now primarily for student-friendliness as location is in API query)
 function filterInternships(internships) {
-  console.log('Filtering internships for US-based opportunities...');
+  console.log('Filtering internships for student-friendliness...');
   
-  // Filter for US-based internships
-  const usInternships = internships.filter(internship => {
-    // Check countries_derived array
-    if (internship.countries_derived && internship.countries_derived.some(country => country.includes('United States'))) {
-      return true;
-    }
-    
-    // Check locations_raw
-    if (internship.locations_raw && internship.locations_raw.some(loc => 
-      loc.address && loc.address.addressCountry === 'US')) {
-      return true;
-    }
-    
-    // Check location string if available
-    const location = (internship.location || '').toLowerCase();
-    return location.includes('usa') || location.includes('united states') || 
-           location.includes('us') || location.includes('america');
-  });
-  
-  console.log(`Found ${usInternships.length} internships in the United States`);
-  
+  // Location filter is now primarily handled by the API query parameter.
+  // We can add a stricter client-side filter if needed, but let's rely on the API first.
   // Filter for student-friendly internships
-  const studentInternships = usInternships.filter(internship => {
+  const studentInternships = internships.filter(internship => {
     const title = (internship.title || '').toLowerCase();
     const description = (internship.description || '').toLowerCase();
     
@@ -168,108 +181,90 @@ function determineTimeCommitment(internship) {
   }
 }
 
-// Function to check if an internship already exists in the database using MCP server
-// This function is not fully implemented for direct use within this Node.js script
-// and would require a separate mechanism to interact with the Supabase database
-// outside of the MCP tool's execute_sql capability which is for single queries.
-// For now, we will skip the existence check and attempt to insert all fetched internships.
-async function internshipExists(internship) {
-  return false; // Skipping existence check for now
-}
-
-// Function to insert internships into the database using MCP server
-async function insertInternships(internships) {
-  console.log('Inserting internships into the database using MCP server...');
-
-  let insertedCount = 0;
-  let skippedCount = 0;
-
-  for (const internship of internships) {
-    try {
-      // Check if internship already exists (skipping for now)
-      const exists = await internshipExists(internship);
-
-      // Extract company name for logging
-      const company = internship.organization || 'Unknown Company';
-
-      if (exists) {
-        console.log(`Skipping internship "${internship.title}" from "${company}" (already exists)`);
-        skippedCount++;
-        continue;
-      }
-
-      // Map internship to our job schema
-      const job = mapInternshipToJobSchema(internship);
-
-      // Construct the SQL INSERT statement
-      const query = `
-        INSERT INTO jobs (title, company, location, description, requirements, type, level, applicants, posted_at, external_link, company_logo, employer_id, application_url, time_commitment, source, career_site_url)
-        VALUES (
-          '${job.title.replace(/'/g, "''")}',
-          '${job.company.replace(/'/g, "''")}',
-          '${job.location.replace(/'/g, "''")}',
-          '${job.description.replace(/'/g, "''")}',
-          '{}', -- Inserting an empty text array literal for requirements
-          '${job.type}',
-          '${job.level}',
-          ${job.applicants},
-          '${job.posted_at}',
-          ${job.external_link ? `'${job.external_link.replace(/'/g, "''")}'` : 'NULL'},
-          ${job.company_logo ? `'${job.company_logo.replace(/'/g, "''")}'` : 'NULL'},
-          '${job.employer_id}',
-          ${job.application_url ? `'${job.application_url.replace(/'/g, "''")}'` : 'NULL'},
-          ${job.time_commitment ? `'${job.time_commitment}'` : 'NULL'},
-          '${job.source}',
-          ${job.career_site_url ? `'${job.career_site_url.replace(/'/g, "''")}'` : 'NULL'}
-        );
-      `;
-
-      // Use the MCP tool to execute the SQL query
-      console.log(`Attempting to insert internship "${job.title}" from "${job.company}" using MCP tool...`);
-      // Note: Direct tool usage within a Node.js script is not possible.
-      // This section is illustrative of the intended logic if this were run in an environment
-      // where MCP tools are directly callable within the script execution context.
-      // For this task, we will manually execute the tool call after the file is updated.
-
-      // For now, just log the query that would be executed
-      console.log("Generated SQL Query:");
-      console.log(query);
-      console.log('---');
-
-      insertedCount++; // Count as inserted for logging purposes
-    } catch (error) {
-      console.error(`Error processing internship:`, error);
-    }
+// Function to insert internships into the database using supabase-js
+async function insertJobsToSupabase(jobs) {
+  if (!supabase) {
+    console.error('Supabase client not initialized. Skipping job insertion.');
+    return;
   }
+  if (jobs.length === 0) {
+    console.log('No new jobs to insert.');
+    return;
+  }
+  console.log(`Attempting to insert/upsert ${jobs.length} jobs into Supabase...`);
 
-  console.log(`Processed ${insertedCount} internships for insertion, skipped ${skippedCount} existing internships`);
-  console.log("Please manually execute the generated SQL queries using the MCP tool.");
+  const { data, error } = await supabase
+    .from('jobs')
+    .upsert(jobs, {
+      onConflict: 'title,company,location', // Assumes a unique constraint
+      ignoreDuplicates: true 
+    });
+
+  if (error) {
+    console.error('Error upserting jobs to Supabase:', error);
+  } else {
+    console.log(`Successfully processed upsert for ${jobs.length} jobs. Result data length: ${data ? data.length : 'N/A'}`);
+  }
 }
+
+// Function to delete old RapidAPI jobs from the database using supabase-js
+async function deleteOldRapidApiJobs() {
+  if (!supabase) {
+    console.error('Supabase client not initialized. Skipping deletion of old jobs.');
+    return;
+  }
+  console.log('Deleting old RapidAPI jobs (older than 2 months) from the database...');
+  
+  const twoMonthsAgo = new Date();
+  twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+
+  try {
+    const { error } = await supabase
+      .from('jobs')
+      .delete()
+      .eq('source', 'RapidAPI')
+      .lt('posted_at', twoMonthsAgo.toISOString());
+
+    if (error) {
+      console.error('Error deleting old RapidAPI jobs from Supabase:', error);
+    } else {
+      console.log('Successfully deleted old RapidAPI jobs.');
+    }
+  } catch (error) {
+    console.error('Exception during deleteOldRapidApiJobs:', error);
+  }
+}
+
 
 // Main function to run the script
 async function main() {
-  console.log('Starting RapidAPI Internships fetch script with MCP server...');
+  console.log('Starting RapidAPI Internships fetch script...');
   
-  // Fetch internships from RapidAPI
-  const internships = await fetchInternships();
+  if (!supabase) {
+    console.log('Supabase client not initialized. Exiting script.');
+    return;
+  }
+
+  await deleteOldRapidApiJobs();
+
+  const internships = await fetchInternships(); 
   
   if (internships.length === 0) {
-    console.log('No internships found. Exiting.');
+    console.log('No internships found from RapidAPI for Houston. Exiting.');
     return;
   }
   
-  // Filter internships for US-based opportunities
   const filteredInternships = filterInternships(internships);
   
   if (filteredInternships.length === 0) {
-    console.log('No matching internships found after filtering. Exiting.');
+    console.log('No matching student-friendly internships found after filtering. Exiting.');
     return;
   }
   
-  // Insert internships into the database using MCP server
-  await insertInternships(filteredInternships);
+  const jobsToInsert = filteredInternships.map(mapInternshipToJobSchema);
+  await insertJobsToSupabase(jobsToInsert); 
   
-  console.log('RapidAPI Internships fetch script with MCP server completed successfully.');
+  console.log('RapidAPI Internships fetch script completed successfully.');
 }
 
 // Run the script

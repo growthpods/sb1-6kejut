@@ -18,40 +18,50 @@ This file tracks what works, what's left to build, current status, and known iss
 - Fixed text inconsistencies in HomePage.tsx (changed "Browse Find-Jobs" to "Browse Jobs", "Browse Evening Jobs", and "Browse Weekend Jobs")
 - Fixed filter settings for job categories (Evening, Weekend, Summer)
 - GitHub repository set up at https://github.com/growthpods/sb1-6kejut.git for version control
-- RapidAPI Internships API integration for fetching Houston high school internships
-- Database schema updated with source and career_site_url columns
-- Weekly job script to fetch and store internships from RapidAPI
-- Script to fetch and store RapidAPI internship results using Supabase MCP server
+- RapidAPI Internships API integration for fetching internships (initial setup, including schema updates for `source` and `career_site_url`).
+- Script (`scripts/fetchRapidApiInternshipsMCP.js`) developed and updated to fetch (with pagination and 'Houston' filter), filter, and prepare RapidAPI internship data. It now uses `supabase-js` directly for database operations.
+- Implemented automated daily job fetching from RapidAPI specifically for Houston, TX, using a Netlify Scheduled Function (`netlify/functions/fetch-daily-jobs.js`). This function includes pagination, corrected location filter, and uses `supabase-js` directly for database interactions (deletions and upserts).
+- The Netlify scheduled function includes logic to delete RapidAPI-sourced jobs older than 2 months from the database using `supabase-js`.
+- Updated `.env` with the correct RapidAPI key and `SUPABASE_ACCESS_TOKEN` (though the latter is not used by `supabase-js` client directly, it's good to have for other MCP interactions if any).
+- Manually ran the updated job fetching script for Houston (returned 0 results in the most recent test after initial data load and deletion of old jobs, even with pagination and corrected filter).
+- Configured `netlify.toml` for the scheduled Netlify function.
+- Documented job sourcing mechanisms and the shift to `supabase-js` for this workflow in `systemPatterns.md` and `techContext.md`.
+- Updated UI (`JobCard.tsx`, `JobDetailsPage.tsx`) to remove job source information from display, per user request.
+- Updated `Job` type (`src/types/index.ts`) to include 'RapidAPI' as a source and add `careerSiteUrl` property (type update remains for data integrity).
+- Successfully added a unique constraint (title, company, location) to the `jobs` table via migration `20250516192600_add_unique_constraint_jobs_title_company_location.sql`.
+- Successfully fetched and upserted 49 internships from RapidAPI using the 'Houston' filter after applying the unique constraint. Total RapidAPI jobs in DB is now 67.
 
 ## What's Left to Build
-- Debug the chat interface to properly display responses from the Gemini API
-- Implement error handling for API failures
-- Add unit tests for the Gemini API integration
-- Enhance the job posting workflow with more AI-powered features
-- Implement analytics for job posting performance
-- Add email notifications for job applications
-- Test the guardrails to ensure they're effective
-- Ensure the job posting workflow correctly collects contact information
-- Update all Supabase operations to use the MCP server instead of direct API calls
+- Debug the chat interface to properly display responses from the Gemini API.
+- Implement error handling for API failures.
+- Add unit tests for the Gemini API integration.
+- Enhance the job posting workflow with more AI-powered features.
+- Implement analytics for job posting performance.
+- Add email notifications for job applications.
+- Test the guardrails to ensure they're effective.
+- Ensure the job posting workflow correctly collects contact information.
+- Finalize and test the `supabase-js` database calls within the Netlify function `fetch-daily-jobs.js` in a deployed Netlify environment (ensure environment variables like `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` are correctly set in Netlify).
+- Monitor daily Netlify scheduled function and investigate if RapidAPI fetching for Houston continues to yield 0 results (may require filter/API adjustments).
+- Review other parts of the application for consistency in Supabase interaction (MCP vs. direct `supabase-js`) and update if necessary.
 
 ## Current Status
-- The application is functional with basic features working
-- Google Gemini API integration is implemented and tested directly
-- The official @google/genai package is integrated and working
-- The chat interface for job posting needs debugging to display API responses
-- The API key is configured and working correctly
-- System prompts have been enhanced with strict guardrails to ensure the LLM stays focused on job posting tasks only
-- Job posting workflow has been updated to collect email or phone when no application URL is available
-- Strict two-task limitation implemented (job description crafting and job link parsing only)
-- Text inconsistencies in the UI have been fixed (replaced "Find-Jobs" with "Jobs" in button and link text)
-- Filter settings for job categories (Evening, Weekend, Summer) now work correctly
-- Changes have been committed and pushed to GitHub repository
-- Decision made to use Supabase MCP server for all Supabase operations instead of direct API calls
-- Created script to fetch and store RapidAPI internship results using Supabase MCP server
-- Added npm script (fetch:rapidapi:mcp) to run the new MCP-based script
+- The application is functional with basic features working.
+- Google Gemini API integration is implemented for job posting assistance.
+- Automated daily fetching of internships from RapidAPI (filtered for 'Houston' with pagination) is set up via a Netlify Scheduled Function using `supabase-js` for database operations.
+- Data retention policy (delete RapidAPI jobs >2 months old) is part of the scheduled function logic, implemented with `supabase-js`.
+- The `scripts/fetchRapidApiInternshipsMCP.js` has been updated for Houston-specific fetching (including pagination) and direct `supabase-js` database interaction, serving as a manual trigger / basis for the Netlify function.
+- UI updated to remove job source information from `JobCard` and `JobDetailsPage` per user request.
+- `.env` file updated with necessary API keys and Supabase credentials.
+- Initial manual data load from RapidAPI (for general US) performed, and old jobs deletion tested.
+- Updated `SUPABASE_SERVICE_ROLE_KEY` in `.env` file with the value provided by the user.
+- Successfully applied migration `20250516192600_add_unique_constraint_jobs_title_company_location.sql` to enable `ON CONFLICT` for job upserts.
+- Successfully ran `scripts/fetchRapidApiInternshipsMCP.js` with `location_filter: 'Houston'`, fetching 49 jobs and increasing the total count of RapidAPI-sourced jobs to 67.
+- Memory Bank files (`systemPatterns.md`, `techContext.md`, `activeContext.md`) updated to reflect new automation and direct `supabase-js` usage for this workflow.
+- UI improvements made to HomePage.tsx.
 
 ## Known Issues
-- Chat interface not displaying responses from the Gemini API
-- Limited error handling for API failures
-- No unit tests for the Gemini API integration
-- Browser console not showing detailed logs for debugging
+- Chat interface not displaying responses from the Gemini API.
+- Limited error handling for API failures.
+- No unit tests for the Gemini API integration.
+- Browser console not showing detailed logs for debugging.
+- The Netlify function `fetch-daily-jobs.js` relies on environment variables (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RAPIDAPI_INTERNSHIPS_KEY`, `RAPIDAPI_INTERNSHIPS_HOST`) being correctly set in the Netlify deployment environment for it to function.
