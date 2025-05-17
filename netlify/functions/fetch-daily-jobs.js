@@ -82,9 +82,9 @@ async function fetchInternshipsFromRapidAPI() {
         method: 'GET',
         url: `https://${rapidApiHost}/active-jb-7d`,
         params: {
-          title_filter: 'intern OR internship OR "high school" OR "summer job"',
+          title_filter: '"high school" (intern OR internship OR "summer job")', // Made "high school" mandatory with other student terms
           location_filter: 'Texas', // Updated to broader 'Texas' filter
-          description_filter: 'student OR "high school" OR college OR intern',
+          description_filter: '"high school" (student OR college OR intern)', // Made "high school" mandatory with other student terms
           description_type: 'text',
           offset: currentOffset,
         },

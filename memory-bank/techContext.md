@@ -75,7 +75,7 @@ This file documents the technologies used, development setup, technical constrai
 - **Authentication:** API key via RapidAPI (stored in environment variables).
 - **Process:**
     - The Netlify Function first triggers a deletion of jobs older than 2 months from the Supabase database (where `source = 'RapidAPI'`) using the `supabase-js` client library.
-    - It then queries the RapidAPI using a `location_filter: 'Texas'` (defaulting to a broader state-level search) and other student-focused keyword filters. Pagination is implemented using the `offset` parameter to loop through results and attempt to fetch all available jobs for the specified criteria. (User has also requested a dynamic logic: specific user city in TX > Houston fallback > Texas default, which is a future consideration for implementation).
+    - It then queries the RapidAPI using `location_filter: 'Texas'`. The `title_filter` is `'"high school" (intern OR internship OR "summer job")"'` and `description_filter` is `'"high school" (student OR college OR intern)"'` to make "high school" a mandatory term. Pagination is implemented using the `offset` parameter. (User has also requested a dynamic logic: specific user city in TX > Houston fallback > Texas default, which is a future consideration for implementation).
     - Fetched data is filtered again for student-friendliness.
     - Data is mapped to the internal schema and inserted/updated in the Supabase `jobs` table using the `supabase-js` client library's `upsert` method with `onConflict` and `ignoreDuplicates: true`.
 - **Source Tracking:** Jobs are stored with `source='RapidAPI'`.
