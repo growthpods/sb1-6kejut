@@ -1,16 +1,18 @@
+import { CopilotChat, useCopilotChatSuggestions } from '@copilotkit/react-ui';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-// import { toast } from 'sonner'; // Keep if needed for CopilotChat interactions or errors
-// import { supabase } from '../lib/supabase'; // Supabase interactions will be handled by backend tools
-import { useAuth } from '../contexts/AuthContext';
-import { CopilotChat } from '@copilotkit/react-ui';
-// import type { Job } from '../types'; // Job type might be used by backend tools
 
 export function PostJobPage() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  // Most of the old state will be managed by CopilotKit or backend tools
-
+  const [jobTitle, setJobTitle] = useState('');
+  
+  // Add suggestions to help users with job posting
+  useCopilotChatSuggestions(
+    {
+      instructions: "Suggest the most relevant next actions for posting a job.",
+      minSuggestions: 1,
+      maxSuggestions: 2,
+    },
+    [jobTitle]
+  );
   const jobPostingInstructions = `You are an AI assistant helping employers post jobs on InternJobs.ai.
 Your primary goal is to collect all necessary information to create a complete and attractive job posting targeted at students.
 
@@ -37,30 +39,33 @@ If the user pastes a job description, analyze it to pre-fill information, then a
 Once you believe you have all *required* information (Title, Company, Location, Description, Type, Level, and an Application Method), summarize it clearly for the user and ask for their confirmation.
 Required fields for submission are: Title, Company, Location, Description, Type (e.g., Internship), Level (e.g., Entry Level), and either Application URL or a contact email/phone.
 
-If confirmed, inform the user you will proceed to post the job. The actual submission will be handled by a tool.
+If confirmed, ask for the user's email address to verify their identity before posting. Explain that this is required to prevent spam and ensure the job posting is legitimate. Once they provide an email, tell them that in a real implementation, we would send a verification code to their email and ask them to enter it here. For now, just thank them and proceed with posting the job.
+
 If not confirmed, ask what they'd like to change.
 `;
-
-  // TODO: Implement actual job submission logic via a CopilotKit tool on the backend.
-  // This tool would take the final jobData and save it to Supabase.
 
   return (
     <div className="container mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-6 text-center">AI-Powered Job Posting</h1>
       
-      {/* 
-        The CopilotKitProvider is now in App.tsx.
-        We just need to use CopilotChat here.
-      */}
-      <div style={{ height: 'calc(100vh - 250px)', maxHeight: '700px', display: 'flex', flexDirection: 'column' }}>
-        <CopilotChat 
+      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <h2 className="text-xl font-semibold mb-2">How to use this tool:</h2>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>Describe the job you want to post, or paste an existing job description</li>
+          <li>Share a link to an existing job posting to have it automatically analyzed</li>
+          <li>The AI will guide you through collecting all required information</li>
+          <li>Review the final job posting before submitting</li>
+          <li>Provide your email for verification before the job is posted</li>
+        </ul>
+      </div>
+      
+      <div className="bg-white rounded-lg shadow-md overflow-hidden" style={{ height: 'calc(100vh - 350px)', maxHeight: '700px' }}>
+        <CopilotChat
+          instructions={jobPostingInstructions}
           labels={{
             title: "Job Posting Assistant",
             initial: "Hello! I'm here to help you post a new job. You can tell me about the job, paste a description, or share a link to an existing posting.",
           }}
-          instructions={jobPostingInstructions}
-          // We will need to configure tools (Firecrawl, Supabase submission) in the backend runtime.
-          // The CopilotChat component will then be able to leverage them.
         />
       </div>
     </div>

@@ -6,8 +6,10 @@ import { supabase } from '../lib/supabase';
 import type { Job } from '../types';
 import { Link } from 'react-router-dom';
 import { Clock, Briefcase, MapPin, ArrowRight, Search, Building2, GraduationCap } from 'lucide-react';
+import { useEducationLevel } from '../contexts/EducationLevelContext';
 
 export function HomePage() {
+  const { educationLevel } = useEducationLevel();
   const [allJobs, setAllJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,32 +17,53 @@ export function HomePage() {
   const [filters, setFilters] = useState<{ 
     type: string; 
     level: string; 
+    educationLevel?: string;
     timeCommitment?: string;
     datePosted: string 
   }>({ 
     type: 'All', 
     level: 'All', 
+    educationLevel: educationLevel || undefined,
     timeCommitment: undefined,
     datePosted: 'Any time' 
   });
   const jobsRef = useRef<HTMLDivElement>(null);
+
+  // Update filters when educationLevel changes
+  useEffect(() => {
+    if (educationLevel) {
+      setFilters(prevFilters => ({
+        ...prevFilters,
+        educationLevel
+      }));
+    }
+  }, [educationLevel]);
 
   // Fetch recent jobs from Supabase for the homepage
   useEffect(() => {
     async function fetchRecentJobs() {
       try {
         setLoading(true);
-        const { data, error } = await supabase
+        let query = supabase
           .from('jobs')
           .select('*')
-          .order('posted_at', { ascending: false })
-          .limit(6); // Fetch only the 6 most recent jobs for the homepage
+          .order('posted_at', { ascending: false });
+          
+        // Apply education level filter if selected
+        if (educationLevel) {
+          query = query.eq('education_level', educationLevel);
+        }
+        
+        // Limit to 6 jobs for homepage
+        const { data, error } = await query.limit(6);
 
         if (error) throw error;
 
         const jobsWithDates = data.map(job => ({
           ...job,
-          postedAt: new Date(job.posted_at || job.postedAt)
+          postedAt: new Date(job.posted_at || job.postedAt),
+          timeCommitment: job.time_commitment, // Map from snake_case to camelCase
+          educationLevel: job.education_level, // Map from snake_case to camelCase
         }));
         setAllJobs(jobsWithDates as Job[]);
       } catch (error) {
@@ -128,13 +151,25 @@ export function HomePage() {
   return (
     <div className="relative">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-900 to-indigo-800 text-white py-20 md:py-28"> {/* Increased padding */}
+      <div className={`${
+        educationLevel === 'High School' 
+          ? 'bg-gradient-to-r from-green-900 to-green-700' 
+          : educationLevel === 'College'
+            ? 'bg-gradient-to-r from-purple-900 to-purple-700'
+            : 'bg-gradient-to-r from-blue-900 to-indigo-800'
+      } text-white py-20 md:py-28`}> {/* Increased padding */}
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 leading-tight"> {/* Responsive text size */}
-            Jobs That Fit Your Student Life
+            {educationLevel 
+              ? `${educationLevel} Internships That Fit Your Schedule` 
+              : 'Jobs That Fit Your Student Life'}
           </h1>
           <p className="text-lg sm:text-xl text-blue-100 mb-12 max-w-3xl mx-auto">
-            Discover flexible part-time jobs, evening shifts, weekend gigs, and summer opportunities perfect for high school students.
+            {educationLevel === 'High School' 
+              ? 'Discover flexible high school internships for evenings, weekends, or summer breaks to gain valuable experience.'
+              : educationLevel === 'College'
+                ? 'Find college internships that build your resume and professional skills while working around your class schedule.'
+                : 'Discover flexible part-time jobs, evening shifts, weekend gigs, and summer opportunities perfect for high school and college students.'}
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mb-16"> {/* Increased bottom margin */}
             <Link
@@ -155,7 +190,7 @@ export function HomePage() {
           
           {/* Search Bar */}
           <div className="bg-white p-6 rounded-xl shadow-2xl max-w-4xl mx-auto"> {/* Increased padding and shadow */}
-            <SearchBar onSearch={handleSearch} defaultLocation="United States" />
+            <SearchBar onSearch={handleSearch} defaultLocation="Texas" />
           </div>
         </div>
       </div>
@@ -164,7 +199,11 @@ export function HomePage() {
       <div className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row justify-between items-center mb-10"> {/* Increased bottom margin */}
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4 sm:mb-0">Latest Opportunities</h2> {/* Changed text and color */}
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4 sm:mb-0">
+              {educationLevel 
+                ? `Latest ${educationLevel} Internships` 
+                : 'Latest Opportunities'}
+            </h2>
             <Link 
               to="/find-jobs"
               className="text-blue-600 hover:text-blue-700 font-semibold flex items-center group text-lg" // Enhanced link

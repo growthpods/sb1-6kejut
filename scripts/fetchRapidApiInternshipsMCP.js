@@ -1,11 +1,16 @@
 // Script to fetch internships from RapidAPI Internships API and store them in Supabase using MCP server
-import axios from 'axios';
 import dotenv from 'dotenv';
+dotenv.config(); // Load environment variables first
+
+import axios from 'axios';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { getEducationLevelParser } from '../src/lib/educationLevelParser.ts';
+import { getTimeCommitmentParser } from '../src/lib/timeCommitmentParser.ts';
 
-// Initialize dotenv
-dotenv.config();
+// Initialize parsers
+const educationLevelParser = getEducationLevelParser();
+const timeCommitmentParser = getTimeCommitmentParser();
 
 // Get Supabase credentials from environment variables
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -53,9 +58,9 @@ async function fetchInternships() {
         method: 'GET',
         url: `https://${rapidApiHost}/active-jb-7d`,
         params: {
-          title_filter: 'intern OR internship OR "summer job"', // Removed "high school" requirement
-          location_filter: 'Texas', // Updated to broader 'Texas' filter
-          description_filter: 'student OR college OR intern', // Removed "high school" requirement
+          title_filter: '"high school" (intern OR internship OR "summer job")',
+          location_filter: 'Texas', 
+          description_filter: '"high school" (student OR college OR intern)',
           description_type: 'text',
           offset: currentOffset,
         },
@@ -129,7 +134,7 @@ function filterInternships(internships) {
 }
 
 // Function to map RapidAPI internship data to our database schema
-function mapInternshipToJobSchema(internship) {
+async function mapInternshipToJobSchema(internship) {
   // Extract location from the API data
   let location = 'United States';
   if (internship.locations_derived && internship.locations_derived.length > 0) {
@@ -154,6 +159,50 @@ function mapInternshipToJobSchema(internship) {
   // Extract posted date
   const postedAt = internship.date_posted || new Date().toISOString();
   
+  // Use AI to determine education level and time commitment
+  console.log(`Analyzing job: ${internship.title}`);
+  
+  // Prepare job data for analysis
+  const jobData = {
+    title: internship.title || 'Untitled Internship',
+    description: description,
+    company: company,
+    location: location
+  };
+  
+  // Determine education level using AI
+  let educationLevel;
+  try {
+    educationLevel = await educationLevelParser.parseEducationLevelFromText(
+      jobData.title,
+      jobData.description,
+      []
+    );
+    console.log(`Determined education level for "${jobData.title}": ${educationLevel}`);
+  } catch (error) {
+    console.error(`Error determining education level for "${jobData.title}":`, error);
+    educationLevel = null;
+  }
+  
+  // Determine time commitment using AI
+  let timeCommitment;
+  try {
+    timeCommitment = await timeCommitmentParser.parseTimeCommitmentFromText(
+      jobData.title,
+      jobData.description,
+      []
+    );
+    console.log(`Determined time commitment for "${jobData.title}": ${timeCommitment || 'Unknown'}`);
+  } catch (error) {
+    console.error(`Error determining time commitment for "${jobData.title}":`, error);
+    timeCommitment = null;
+  }
+  
+  // Fall back to simple determination if AI fails
+  if (!timeCommitment) {
+    timeCommitment = determineTimeCommitmentSimple(internship);
+  }
+  
   return {
     title: internship.title || 'Untitled Internship',
     company: company,
@@ -168,14 +217,15 @@ function mapInternshipToJobSchema(internship) {
     company_logo: companyLogo,
     employer_id: '00000000-0000-0000-0000-000000000000', // System user ID for API-sourced jobs
     application_url: applicationUrl,
-    time_commitment: determineTimeCommitment(internship),
+    time_commitment: timeCommitment,
+    education_level: educationLevel,
     source: 'RapidAPI',
     career_site_url: careerSiteUrl
   };
 }
 
-// Function to determine time commitment based on internship data
-function determineTimeCommitment(internship) {
+// Simple function to determine time commitment based on internship data (fallback method)
+function determineTimeCommitmentSimple(internship) {
   const title = (internship.title || '').toLowerCase();
   const descriptionText = (internship.description_text || '').toLowerCase();
   
@@ -205,8 +255,8 @@ async function insertJobsToSupabase(jobs) {
   const { data, error } = await supabase
     .from('jobs')
     .upsert(jobs, {
-      onConflict: 'title,company', // Using the existing unique constraint
-      ignoreDuplicates: true 
+      onConflict: 'title,company,location', // Match the actual unique constraint
+      ignoreDuplicates: false // Ensure existing records are updated
     });
 
   if (error) {
@@ -270,8 +320,28 @@ async function main() {
     return;
   }
   
-  const jobsToInsert = filteredInternships.map(mapInternshipToJobSchema);
-  await insertJobsToSupabase(jobsToInsert); 
+  console.log('Mapping internships to job schema and classifying them...');
+  const jobsToInsert = [];
+  
+  // Process each internship sequentially to allow for AI classification
+  for (let i = 0; i < filteredInternships.length; i++) {
+    try {
+      const job = await mapInternshipToJobSchema(filteredInternships[i]);
+      jobsToInsert.push(job);
+      
+      // Add a small delay to avoid rate limiting on AI services
+      if (i < filteredInternships.length - 1) { // No delay after the last item
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    } catch (error) {
+      console.error(`Error mapping internship ${i} to job schema:`, error);
+    }
+  }
+
+  const deduplicatedJobsToInsert = deduplicateJobsArray(jobsToInsert);
+  console.log(`After deduplication, ${deduplicatedJobsToInsert.length} unique jobs to upsert.`);
+
+  await insertJobsToSupabase(deduplicatedJobsToInsert); 
   
   console.log('RapidAPI Internships fetch script completed successfully.');
 }
@@ -280,3 +350,19 @@ async function main() {
 main().catch(error => {
   console.error('Unexpected error in main function:', error);
 });
+
+// Helper function to deduplicate jobs based on title, company, and location
+function deduplicateJobsArray(jobs) {
+  const uniqueJobs = [];
+  const seenKeys = new Set();
+  for (const job of jobs) {
+    const key = `${job.title}|${job.company}|${job.location}`;
+    if (!seenKeys.has(key)) {
+      uniqueJobs.push(job);
+      seenKeys.add(key);
+    } else {
+      console.log(`Duplicate job found and removed from batch: ${job.title} at ${job.company} in ${job.location}`);
+    }
+  }
+  return uniqueJobs;
+}

@@ -14,19 +14,25 @@ import { CookiePolicyPage } from './pages/CookiePolicyPage';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './contexts/AuthContext'; // Import useAuth
 import { CopilotKit } from '@copilotkit/react-core';
+import { EducationLevelProvider } from './contexts/EducationLevelContext';
+import { EducationLevelModal } from './components/EducationLevelModal';
 
-// New component to access auth context and provide it to CopilotKit
+// Component to provide CopilotKit to the app
 function CopilotKitAppContent() {
-  const { user } = useAuth();
-  const copilotKitProperties = user ? { userId: user.id } : {};
-
   return (
     <CopilotKit 
-      runtimeUrl="/.netlify/functions/copilotkit-runtime"
-      properties={copilotKitProperties} // Pass userId if available
+      publicApiKey="ck_pub_72cd57d7c553541743eedfba18fa94e8"
+      guardrails_c={{
+        // Topics to explicitly block
+        invalidTopics: ["politics", "explicit-content", "harmful-content"],
+        // Topics to explicitly allow
+        validTopics: ["business", "technology", "general-assistance", "job-posting", "internships"],
+      }}
+      // Using CopilotKit Cloud with public API key and guardrails
     >
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
+        <EducationLevelModal />
         <main className="flex-grow">
             <Routes>
               <Route path="/" element={<HomePage />} />
@@ -51,7 +57,9 @@ export default function App() {
   return (
     <Router>
       <AuthProvider>
-        <CopilotKitAppContent />
+        <EducationLevelProvider>
+          <CopilotKitAppContent />
+        </EducationLevelProvider>
       </AuthProvider>
     </Router>
   );

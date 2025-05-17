@@ -7,7 +7,7 @@ interface SearchBarProps {
   defaultLocation?: string;
 }
 
-export function SearchBar({ onSearch, defaultLocation = 'United States' }: SearchBarProps) {
+export function SearchBar({ onSearch, defaultLocation = 'Texas' }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [location, setLocation] = useState(defaultLocation);
   const [showLocations, setShowLocations] = useState(false);
@@ -67,22 +67,22 @@ export function SearchBar({ onSearch, defaultLocation = 'United States' }: Searc
   };
 
   return (
-    <div ref={searchContainerRef}>
-      <form onSubmit={handleSubmit} className="flex w-full max-w-4xl bg-white rounded-full overflow-hidden shadow-lg">
-        <div className="flex-1 flex items-center px-6 border-r border-gray-200">
-          <Search className="w-5 h-5 text-gray-400" />
+    <div ref={searchContainerRef} className="w-full">
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row w-full bg-white rounded-2xl sm:rounded-full overflow-hidden shadow-lg">
+        <div className="flex-1 flex items-center px-4 sm:px-6 border-b sm:border-b-0 sm:border-r border-gray-200">
+          <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
           <input
             ref={searchInputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholders[placeholderIndex]}
-            className="w-full px-4 py-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0"
+            className="w-full px-3 sm:px-4 py-3 sm:py-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0"
             style={{ background: 'transparent' }}
           />
         </div>
-        <div className="flex-1 flex items-center px-6 relative">
-          <MapPin className="w-5 h-5 text-gray-400" />
+        <div className="flex-1 flex items-center px-4 sm:px-6 relative">
+          <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0" />
           <input
             type="text"
             value={location}
@@ -92,7 +92,7 @@ export function SearchBar({ onSearch, defaultLocation = 'United States' }: Searc
             }}
             onFocus={() => setShowLocations(true)}
             placeholder="Add country or city"
-            className="w-full px-4 py-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0"
+            className="w-full px-3 sm:px-4 py-3 sm:py-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0"
             style={{ background: 'transparent' }}
           />
           {showLocations && filteredLocations.length > 0 && (
@@ -102,7 +102,7 @@ export function SearchBar({ onSearch, defaultLocation = 'United States' }: Searc
                   key={loc}
                   type="button"
                   onClick={() => handleLocationSelect(loc)}
-                  className="w-full px-6 py-3 text-left hover:bg-gray-50 focus:outline-none text-gray-900"
+                  className="w-full px-4 sm:px-6 py-3 text-left hover:bg-gray-50 focus:outline-none text-gray-900"
                 >
                   {loc}
                 </button>
@@ -112,7 +112,7 @@ export function SearchBar({ onSearch, defaultLocation = 'United States' }: Searc
         </div>
         <button 
           type="submit"
-          className="bg-blue-500 text-white px-8 py-4 hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="bg-blue-500 text-white px-6 sm:px-8 py-3 sm:py-4 hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           Search
         </button>

@@ -5,6 +5,8 @@
 
 import { getGeminiClient, GeminiClient } from './gemini';
 import { getFirecrawlService, FirecrawlService } from './firecrawl';
+import { getEducationLevelParser, EducationLevelParser } from './educationLevelParser';
+import { getTimeCommitmentParser, TimeCommitmentParser } from './timeCommitmentParser';
 import type { Job } from '../types';
 
 // Define the types for job analysis
@@ -16,9 +18,10 @@ interface JobAnalysisResult {
   requirements?: string[];
   type?: string;
   level?: string;
-  timeCommitment?: 'Evening' | 'Weekend' | 'Summer';
+  timeCommitment?: 'Evening' | 'Weekend' | 'Summer' | string | null; // Allow string for guessed suffix, or null
   applicationUrl?: string;
   externalLink?: string;
+  educationLevel?: string | null; // Allow string for guessed suffix, or null
   confidence: number; // 0-100 confidence score
   missingFields: string[]; // Fields that couldn't be extracted
 }
@@ -29,10 +32,14 @@ interface JobAnalysisResult {
 export class JobPostingService {
   private gemini: GeminiClient;
   private firecrawl: FirecrawlService;
+  private educationLevelParser: EducationLevelParser;
+  private timeCommitmentParser: TimeCommitmentParser;
 
   constructor() {
     this.gemini = getGeminiClient();
     this.firecrawl = getFirecrawlService();
+    this.educationLevelParser = getEducationLevelParser();
+    this.timeCommitmentParser = getTimeCommitmentParser();
   }
 
   /**
@@ -130,6 +137,9 @@ export class JobPostingService {
    * @returns Enhanced job data with LLM analysis
    */
   private async analyzeJobData(jobData: any): Promise<JobAnalysisResult> {
+    // First, determine the education level and time commitment
+    const educationLevel = await this.educationLevelParser.parseEducationLevel(jobData);
+    const timeCommitment = await this.timeCommitmentParser.parseTimeCommitment(jobData);
     // Create a prompt for the LLM to analyze the job data
     const prompt = `
 I need you to analyze this job posting information and extract structured data.
@@ -172,7 +182,7 @@ Format your response as a JSON object with these fields.
         const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : analysis;
         const result = JSON.parse(jsonStr) as JobAnalysisResult;
         
-        // Ensure we have the required fields
+        // Ensure we have the required fields and add the education level and time commitment
         return {
           title: result.title,
           company: result.company,
@@ -181,9 +191,10 @@ Format your response as a JSON object with these fields.
           requirements: Array.isArray(result.requirements) ? result.requirements : [],
           type: result.type,
           level: result.level,
-          timeCommitment: result.timeCommitment,
+          timeCommitment: timeCommitment || result.timeCommitment, // Prefer our parsed time commitment
           applicationUrl: result.applicationUrl,
           externalLink: result.externalLink,
+          educationLevel: educationLevel, // Add the determined education level
           confidence: result.confidence || 0,
           missingFields: result.missingFields || []
         };
@@ -252,7 +263,20 @@ Format your response as a JSON object with these fields.
         const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : analysis;
         const result = JSON.parse(jsonStr) as JobAnalysisResult;
         
-        // Ensure we have the required fields
+        // Determine the education level and time commitment based on the extracted job data
+        const educationLevel = await this.educationLevelParser.parseEducationLevelFromText(
+          result.title || '',
+          result.description || '',
+          Array.isArray(result.requirements) ? result.requirements : []
+        );
+        
+        const timeCommitment = await this.timeCommitmentParser.parseTimeCommitmentFromText(
+          result.title || '',
+          result.description || '',
+          Array.isArray(result.requirements) ? result.requirements : []
+        );
+        
+        // Ensure we have the required fields and add the education level and time commitment
         return {
           title: result.title,
           company: result.company,
@@ -261,9 +285,10 @@ Format your response as a JSON object with these fields.
           requirements: Array.isArray(result.requirements) ? result.requirements : [],
           type: result.type,
           level: result.level,
-          timeCommitment: result.timeCommitment,
+          timeCommitment: timeCommitment || result.timeCommitment, // Prefer our parsed time commitment
           applicationUrl: result.applicationUrl,
           externalLink: undefined, // No external link for text input
+          educationLevel: educationLevel, // Add the determined education level
           confidence: result.confidence || 0,
           missingFields: result.missingFields || []
         };

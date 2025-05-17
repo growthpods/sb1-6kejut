@@ -8,7 +8,7 @@ import { GoogleGenAI } from '@google/genai';
  */
 export class GeminiClient {
   private ai: GoogleGenAI;
-  private defaultModel: string = 'gemini-2.5-flash-preview-04-17';
+  private defaultModel: string = 'gemini-1.5-flash-latest'; // Changed to stable fast model
 
   constructor(apiKey: string, model?: string) {
     this.ai = new GoogleGenAI({ apiKey });
@@ -64,8 +64,18 @@ export class GeminiClient {
       // Collect all chunks of the response
       let fullResponse = '';
       for await (const chunk of response) {
-        console.log('Gemini: Received chunk:', chunk.text);
-        fullResponse += chunk.text;
+        // Assuming chunk.text is the correct way to get text based on previous logs.
+        // Guard against undefined or non-string chunk text.
+        const textContent = chunk.text; 
+        console.log('Gemini: Received chunk text content:', textContent);
+        if (typeof textContent === 'string') {
+          fullResponse += textContent;
+        } else if (textContent) {
+          // If chunk.text exists but isn't a string, log a warning.
+          // This case might not occur with the current library version but is a safeguard.
+          console.warn('Gemini: Received non-string chunk text:', textContent);
+        }
+        // If textContent is null or undefined, it's skipped, preventing "undefined" string concatenation.
       }
       
       return fullResponse;
@@ -105,10 +115,19 @@ let geminiClient: GeminiClient | null = null;
  */
 export function getGeminiClient(): GeminiClient {
   if (!geminiClient) {
-    // Get API key from environment variable
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    let apiKey: string | undefined;
+    // Check for Vite environment (client-side)
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+      apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    }
+    
+    // Fallback to Node.js environment (server-side/scripts)
+    if (!apiKey && typeof process !== 'undefined' && process.env) {
+      apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    }
+
     if (!apiKey) {
-      throw new Error('Gemini API key not found. Please set VITE_GEMINI_API_KEY in your .env file.');
+      throw new Error('Gemini API key not found. Please set VITE_GEMINI_API_KEY (for client-side) or GEMINI_API_KEY (for server-side/scripts) in your .env file.');
     }
     geminiClient = new GeminiClient(apiKey);
   }

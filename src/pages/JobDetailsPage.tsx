@@ -81,131 +81,153 @@ export function JobDetailsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <div className="flex items-start justify-between">
-            <div className="flex gap-6">
-              <img
-                src={job.companyLogo || `https://ui-avatars.com/api/?name=${job.company}`}
-                alt={`${job.company} logo`}
-                className="w-16 h-16 rounded-lg object-contain"
-              />
-              <div>
-                <h1 className="text-3xl font-bold">{job.title}</h1>
-                <p className="text-xl text-gray-600 mt-1">{job.company}</p>
+    <div className={`${
+      job.educationLevel === 'High School' 
+        ? 'bg-green-50' 
+        : job.educationLevel === 'College'
+          ? 'bg-purple-50'
+          : 'bg-gray-50'
+    } py-12`}>
+      <div className="container mx-auto px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className={`${
+            job.educationLevel === 'High School' 
+              ? 'bg-white border-l-4 border-green-500' 
+              : job.educationLevel === 'College'
+                ? 'bg-white border-l-4 border-purple-500'
+                : 'bg-white'
+          } rounded-lg shadow-md p-8`}>
+            <div className="flex items-start justify-between">
+              <div className="flex gap-6">
+                <img
+                  src={job.companyLogo || `https://ui-avatars.com/api/?name=${job.company}`}
+                  alt={`${job.company} logo`}
+                  className="w-16 h-16 rounded-lg object-contain"
+                />
+                <div>
+                  <h1 className="text-3xl font-bold">{job.title}</h1>
+                  <p className="text-xl text-gray-600 mt-1">{job.company}</p>
 
-                {/* Time Commitment Badge */}
-                {job.timeCommitment && (
-                  <div className="mt-2">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                      <Clock className="w-4 h-4 mr-1" />
-                      {job.timeCommitment} Availability
-                    </span>
-                  </div>
+                  {/* Education Level Badge - Prominently displayed */}
+                  {job.educationLevel && (
+                    <div className="mt-2">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                        job.educationLevel === 'High School' 
+                          ? 'bg-green-100 text-green-800 border border-green-300' 
+                          : 'bg-purple-100 text-purple-800 border border-purple-300'
+                      }`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                          <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
+                        </svg>
+                        {job.educationLevel} Internship
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Time Commitment Badge */}
+                  {job.timeCommitment && (
+                    <div className="mt-2">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                        <Clock className="w-4 h-4 mr-1" />
+                        {job.timeCommitment} Availability
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Buttons for Apply and Career Site */}
+              <div className="flex flex-col items-end gap-4">
+                {/* Apply Button - Use applicationUrl or externalLink */}
+                {(job.applicationUrl || job.externalLink) && (
+                  <a
+                    href={job.applicationUrl || job.externalLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                  >
+                    Apply Now
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </a>
+                )}
+
+                {/* Career Site Button */}
+                {/* @ts-ignore TODO: Add careerSiteUrl to Job type */}
+                {job.careerSiteUrl && (
+                  <a
+                    // @ts-ignore
+                    href={job.careerSiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center px-6 py-3 rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors"
+                  >
+                    Company Career Site
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </a>
+                )}
+
+                {/* Display if no apply link is available */}
+                {!(job.applicationUrl || job.externalLink) && !(job as any).careerSiteUrl && (
+                  <span className="px-6 py-3 rounded-lg bg-gray-400 text-white cursor-not-allowed">
+                    Links Unavailable
+                  </span>
                 )}
               </div>
             </div>
 
-            {/* Buttons for Apply and Career Site */}
-            <div className="flex flex-col items-end gap-4">
-              {/* Apply Button - Use applicationUrl or externalLink */}
-              {(job.applicationUrl || job.externalLink) && (
-                <a
-                  href={job.applicationUrl || job.externalLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                >
-                  Apply Now
-                  <ExternalLink className="w-4 h-4 ml-2" />
-                </a>
-              )}
-
-              {/* Career Site Button */}
-              {/* @ts-ignore TODO: Add careerSiteUrl to Job type */}
-              {job.careerSiteUrl && (
-                <a
-                  // @ts-ignore
-                  href={job.careerSiteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center px-6 py-3 rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors"
-                >
-                  Company Career Site
-                  <ExternalLink className="w-4 h-4 ml-2" />
-                </a>
-              )}
-
-              {/* Display if no apply link is available */}
-              {!(job.applicationUrl || job.externalLink) && !(job as any).careerSiteUrl && (
-                <span className="px-6 py-3 rounded-lg bg-gray-400 text-white cursor-not-allowed">
-                  Links Unavailable
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-            <div className="flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-gray-400" />
-              <span>{job.type || 'N/A'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-gray-400" />
-              <span>{job.location || 'N/A'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-gray-400" />
-              <span>Posted: {new Date(job.postedAt).toLocaleDateString()}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Check className="w-5 h-5 text-gray-400" />
-              <span>{job.level || 'N/A'}</span>
-            </div>
-            {/* Source display removed as per user request */}
-            {/* Handle case where timeCommitment might not exist in the database yet */}
-            {job.timeCommitment && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
               <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-green-500" />
-                <span className="font-medium text-green-700">{job.timeCommitment} Availability</span>
+                <Briefcase className="w-5 h-5 text-gray-400" />
+                <span>{job.type || 'N/A'}</span>
               </div>
-            )}
-            
-            {/* Display Education Level if available */}
-            {job.educationLevel && (
               <div className="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                  <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
-                </svg>
-                <span className="font-medium text-purple-700">{job.educationLevel} Education</span>
+                <MapPin className="w-5 h-5 text-gray-400" />
+                <span>{job.location || 'N/A'}</span>
               </div>
-            )}
-          </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-gray-400" />
+                <span>Posted: {new Date(job.postedAt).toLocaleDateString()}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-5 h-5 text-gray-400" />
+                <span>{job.level || 'N/A'}</span>
+              </div>
+              {/* Source display removed as per user request */}
+              {/* Handle case where timeCommitment might not exist in the database yet */}
+              {job.timeCommitment && (
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-green-500" />
+                  <span className="font-medium text-green-700">{job.timeCommitment} Availability</span>
+                </div>
+              )}
+              
+              {/* Education Level is now displayed prominently at the top, so we can remove this section */}
+            </div>
 
-          <div className="mt-8">
-            <h2 className="text-xl font-semibold mb-4">Description</h2>
-            <p className="text-gray-600 whitespace-pre-wrap">{job.description || 'No description provided.'}</p> {/* Add fallback */}
-          </div>
-
-          {/* Ensure requirements is an array before mapping */}
-          {Array.isArray(job.requirements) && job.requirements.length > 0 && (
             <div className="mt-8">
-              <h2 className="text-xl font-semibold mb-4">Requirements</h2>
-              <ul className="list-disc list-inside space-y-2">
-                {job.requirements.map((req, index) => (
-                  <li key={index} className="text-gray-600">{req}</li>
-                ))}
-              </ul>
+              <h2 className="text-xl font-semibold mb-4">Description</h2>
+              <p className="text-gray-600 whitespace-pre-wrap">{job.description || 'No description provided.'}</p> {/* Add fallback */}
             </div>
-          )}
-          {(!Array.isArray(job.requirements) || job.requirements.length === 0) && (
-             <div className="mt-8">
-               <h2 className="text-xl font-semibold mb-4">Requirements</h2>
-               <p className="text-gray-600">No specific requirements listed.</p>
-             </div>
-          )}
+
+            {/* Ensure requirements is an array before mapping */}
+            {Array.isArray(job.requirements) && job.requirements.length > 0 && (
+              <div className="mt-8">
+                <h2 className="text-xl font-semibold mb-4">Requirements</h2>
+                <ul className="list-disc list-inside space-y-2">
+                  {job.requirements.map((req, index) => (
+                    <li key={index} className="text-gray-600">{req}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {(!Array.isArray(job.requirements) || job.requirements.length === 0) && (
+               <div className="mt-8">
+                 <h2 className="text-xl font-semibold mb-4">Requirements</h2>
+                 <p className="text-gray-600">No specific requirements listed.</p>
+               </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

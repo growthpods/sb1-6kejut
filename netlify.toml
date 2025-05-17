@@ -17,3 +17,7 @@
 # CopilotKit runtime function configuration
 [functions."copilotkit-runtime"]
   timeout = 60 # Set timeout to 60 seconds
+
+# CopilotKit runtime ESM function configuration
+[functions."copilotkit-runtime-esm"]
+  timeout = 60 # Set timeout to 60 seconds

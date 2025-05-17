@@ -1,15 +1,20 @@
-// Use CommonJS syntax for Netlify Functions
-const { CopilotRuntime, GoogleGenerativeAIAdapter } = require("@copilotkit/runtime");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { supabase } = require("../../src/lib/supabase"); // Adjust path as needed
-const axios = require('axios');
-const { Readable, PassThrough } = require('stream');
+// Use ES modules syntax for Netlify Functions
+import { CopilotRuntime, GoogleGenerativeAIAdapter } from "@copilotkit/runtime";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { createClient } from '@supabase/supabase-js';
+import axios from 'axios'; 
+import { Readable, PassThrough } from 'stream';
+
+// Initialize Supabase client for server-side environment
+const supabaseUrl = process.env.SUPABASE_URL || 'https://jhboikdocmcnpvbtanwo.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Load environment variables
-const dotenv = require('dotenv');
+import dotenv from 'dotenv';
 dotenv.config();
 
-exports.handler = async function(event, context) {
+export const handler = async (event, context) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
@@ -66,10 +71,7 @@ exports.handler = async function(event, context) {
                   },
                 }
               );
-              // Firecrawl's /v0/scrape endpoint returns an object like:
-              // { success: true, data: { content: "...", markdown: "...", metadata: {...} } }
-              // or { success: false, error: "..." }
-                      // Check the structure of the response and extract the markdown content
+              // Check the structure of the response and extract the markdown content
               console.log("Firecrawl API response structure:", JSON.stringify(Object.keys(response.data)));
               
               // Handle v1 API response format
@@ -243,4 +245,4 @@ exports.handler = async function(event, context) {
     console.error("Error in CopilotKit runtime function:", error);
     return { statusCode: 500, body: "Internal Server Error" };
   }
-}
+};
