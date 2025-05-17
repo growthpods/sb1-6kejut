@@ -66,7 +66,7 @@ This file tracks the current work focus.
 - Rewrote `src/pages/PostJobPage.tsx` to use `<CopilotChat />` component and defined a detailed system prompt.
 - Added `GEMINI_API_KEY` to `.env` file (copied from `VITE_GEMINI_API_KEY`).
 - Added `FIRECRAWL_API_KEY` to `.env` file.
-- Updated `scrapeJobUrl` tool in `netlify/functions/copilotkit-runtime.js` to make direct API calls to Firecrawl (`https://api.firecrawl.dev/v0/scrape`) using the API key, requesting markdown.
+- Updated `scrapeJobUrl` tool in `netlify/functions/copilotkit-runtime.js` to make direct API calls to Firecrawl (`https://api.firecrawl.dev/v1/scrape`) using the API key and correct payload (`{ url, formats: ["markdown"], pageOptions: { onlyMainContent: true } }`) for markdown.
 
 ## Next Steps
 - Implement secure `employer_id` handling in `submitJobPosting` tool (e.g., via properties from frontend).

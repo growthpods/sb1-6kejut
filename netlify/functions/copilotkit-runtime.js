@@ -53,11 +53,11 @@ export async function handler(event, context) {
             }
             try {
               const response = await axios.post(
-                'https://api.firecrawl.dev/v0/scrape',
+                'https://api.firecrawl.dev/v1/scrape', // Updated to v1
                 { 
                   url: url,
-                  pageOptions: { onlyMainContent: true },
-                  extractorOptions: { mode: "markdown" } // Explicitly request markdown
+                  formats: ["markdown"], // Request markdown format
+                  pageOptions: { onlyMainContent: true }
                 },
                 {
                   headers: {

@@ -110,7 +110,7 @@ This file documents the technologies used, development setup, technical constrai
     - Uses `GoogleGenerativeAIAdapter` with the `gemini-2.0-flash` model, configured with `GEMINI_API_KEY` environment variable.
     - Function timeout set to 60 seconds in `netlify.toml`.
     - **Tools Planned/Implemented:**
-        - `scrapeJobUrl` (Firecrawl): Updated to make direct API calls to Firecrawl (`https://api.firecrawl.dev/v0/scrape`) using `axios` and `FIRECRAWL_API_KEY`. Requests markdown content.
+        - `scrapeJobUrl` (Firecrawl): Updated to make direct POST API calls to Firecrawl (`https://api.firecrawl.dev/v1/scrape`) using `axios` and `FIRECRAWL_API_KEY`. Payload `{ url, formats: ["markdown"], pageOptions: { onlyMainContent: true } }` is used to request markdown.
         - `submitJobPosting` (Supabase): Logic to insert job data into Supabase. Requires secure handling of `employer_id` (user context, potentially passed via `properties` from frontend).
 - **Styling:** CopilotKit default styles imported in `src/main.tsx`.
 

@@ -35,7 +35,7 @@ This file tracks what works, what's left to build, current status, and known iss
 - **CopilotKit Integration (PostJobPage):**
     - Installed CopilotKit packages (`@copilotkit/react-core`, `@copilotkit/react-ui`, `@copilotkit/runtime`) and `@google/generative-ai`.
     - Created Netlify function `netlify/functions/copilotkit-runtime.js` with `GoogleGenerativeAIAdapter` (using `gemini-2.0-flash`).
-    - Implemented `scrapeJobUrl` tool in the runtime to call Firecrawl API directly using `FIRECRAWL_API_KEY`.
+    - Updated `scrapeJobUrl` tool in the runtime to call Firecrawl API v1 directly (`https://api.firecrawl.dev/v1/scrape`) with payload `{ url, formats: ["markdown"], pageOptions: { onlyMainContent: true } }` using `FIRECRAWL_API_KEY`.
     - Implemented initial structure for `submitJobPosting` (Supabase) tool in the runtime.
     - Configured 60s timeout for `copilotkit-runtime` function in `netlify.toml`.
     - Added CopilotKit styles to `src/main.tsx` and wrapped `src/App.tsx` with `<CopilotKit runtimeUrl>`.
@@ -46,7 +46,7 @@ This file tracks what works, what's left to build, current status, and known iss
 - **CopilotKit - PostJobPage:**
     - Implement secure `employer_id` (user ID) handling for the `submitJobPosting` tool in `copilotkit-runtime.js`.
     - Verify and refine stream handling in the `copilotkit-runtime.js` Netlify function for robust `CopilotChat` responses.
-    - Thoroughly test the new `PostJobPage` with CopilotKit, including tool invocation and job submission.
+    - Thoroughly test the new `PostJobPage` with CopilotKit, including tool invocation (especially Firecrawl) and job submission.
 - Debug the chat interface to properly display responses from the Gemini API.
 - Implement error handling for API failures.
 - Add unit tests for the Gemini API integration.
@@ -79,7 +79,7 @@ This file tracks what works, what's left to build, current status, and known iss
 
 ## Known Issues
 - PostJobPage chat (previous version): User's typed messages (via automation) did not appear in the interface. This is now being replaced by CopilotKit.
-- CopilotKit `scrapeJobUrl` tool: Now makes direct API calls to Firecrawl. Needs testing.
+- CopilotKit `scrapeJobUrl` tool: Updated to use Firecrawl API v1 and specific payload for markdown. Needs testing.
 - Limited error handling for API failures.
 - No unit tests for the Gemini API integration.
 - Browser console not showing detailed logs for debugging.
