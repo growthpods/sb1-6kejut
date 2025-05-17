@@ -65,9 +65,10 @@ This file tracks the current work focus.
 - Wrapped `src/App.tsx` with `<CopilotKit runtimeUrl="/.netlify/functions/copilotkit-runtime">`.
 - Rewrote `src/pages/PostJobPage.tsx` to use `<CopilotChat />` component and defined a detailed system prompt.
 - Added `GEMINI_API_KEY` to `.env` file (copied from `VITE_GEMINI_API_KEY`).
+- Added `FIRECRAWL_API_KEY` to `.env` file.
+- Updated `scrapeJobUrl` tool in `netlify/functions/copilotkit-runtime.js` to make direct API calls to Firecrawl (`https://api.firecrawl.dev/v0/scrape`) using the API key, requesting markdown.
 
 ## Next Steps
-- Implement proper Firecrawl API call from `scrapeJobUrl` tool in Netlify function (currently uses mock).
 - Implement secure `employer_id` handling in `submitJobPosting` tool (e.g., via properties from frontend).
 - Verify and refine stream handling in Netlify function for `CopilotChat`.
 - Test the new `PostJobPage` with CopilotKit integration, including tool usage.
@@ -95,7 +96,7 @@ This file tracks the current work focus.
 - The `location_filter` for RapidAPI Internships API in `scripts/fetchRapidApiInternshipsMCP.js` and `netlify/functions/fetch-daily-jobs.js` is set to 'Texas'.
 - The `title_filter` is `'"high school" (intern OR internship OR "summer job")"` and `description_filter` is `'"high school" (student OR college OR intern)"` in both scripts to make "high school" a mandatory term.
 - CopilotKit integration will use `gemini-2.0-flash`.
-- Firecrawl tool in CopilotKit backend will initially use mock data due to `window.mcpRequest` unavailability in Node.js; needs update for direct API call.
+- Firecrawl tool in CopilotKit backend now attempts direct API calls.
 - `employer_id` for job submissions via CopilotKit tool needs a secure passing mechanism from frontend context.
 - User has requested a more dynamic location filtering logic: specific user city in Texas (if known) > 'Houston' (as a fallback if specific city not applicable/found) > 'Texas' (general default). This needs further clarification for script implementation.
 - Storing API-sourced jobs with `source='RapidAPI'` to distinguish from manually posted jobs.

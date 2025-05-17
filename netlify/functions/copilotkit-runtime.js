@@ -1,11 +1,7 @@
 import { CopilotRuntime, GoogleGenerativeAIAdapter } from "@copilotkit/runtime";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { supabase } from "../../src/lib/supabase"; // Adjust path as needed
-// For Firecrawl, we need a way to call it from Node.js.
-// The existing FirecrawlService uses window.mcpRequest or mock.
-// For a real implementation, we'd need direct API access or a Node.js client for Firecrawl.
-// For now, let's import the service and see if we can adapt or mock it.
-import { getFirecrawlService } from "../../src/lib/firecrawl"; // Adjust path
+import axios from 'axios'; // Added for direct API calls
 
 // Load environment variables
 import dotenv from 'dotenv';
@@ -38,46 +34,52 @@ export async function handler(event, context) {
       model: "gemini-2.0-flash",
     });
 
-    const firecrawlService = getFirecrawlService();
+    // const firecrawlService = getFirecrawlService(); // Not using this for direct API call
 
     const runtime = new CopilotRuntime({
       actions: [
         {
           name: "scrapeJobUrl",
-          description: "Fetches and scrapes the content of a job posting URL to extract its text content for analysis. Use this if a user provides a URL for a job posting.",
+          description: "Fetches and scrapes the markdown content of a job posting URL for analysis. Use this if a user provides a URL for a job posting.",
           parameters: [
             { name: "url", type: "string", description: "The URL of the job posting to scrape.", required: true },
           ],
           handler: async ({ url }) => {
             console.log("scrapeJobUrl tool called with URL:", url);
+            const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
+            if (!firecrawlApiKey) {
+              console.error("FIRECRAWL_API_KEY is not set.");
+              return "Error: Firecrawl API key is not configured on the server.";
+            }
             try {
-              // This will use mock data if window.mcpRequest is not available,
-              // which will be the case in Netlify function.
-              // TODO: Replace with a direct Firecrawl API call if possible from Node.js backend.
-              const scrapeResult = await firecrawlService.scrapeJobListing(url); // This returns ScrapedJobData, not raw markdown
-              // The LLM likely expects raw text. Let's return the description part or a combined text.
-              // For now, returning the mock content structure or a simplified version.
-              // The original FirecrawlService's scrapeJobListing calls parseJobContent.
-              // Let's assume the LLM can work with the ScrapedJobData object structure.
-              // Or, more simply, the tool should just return the raw markdown if that's what the LLM is trained to process.
-              // The current firecrawlService.scrapeJobListing returns parsed data, not raw markdown.
-              // Let's modify the tool to reflect that it returns structured data, or get raw markdown.
-              // For now, let's assume it returns a string of the description for simplicity.
-              // This needs to align with how the LLM will use the scraped data.
-              // A better approach: the tool returns the raw markdown, and the LLM processes it.
-              // The current `firecrawlService.scrapeJobListing` doesn't directly give raw markdown if it parses.
-              // Let's assume we want the tool to return the main text content.
-              // The `callFirecrawlMcp` in the service with `formats: ['markdown']` should give markdown.
-              // The issue is `callFirecrawlMcp` uses mock if not in Claude env.
-              // For a real backend tool, this needs a proper HTTP client for Firecrawl API.
-              // For now, it will return mock data.
-              if (scrapeResult && scrapeResult.description) {
-                return `Scraped content for ${url}:\nTitle: ${scrapeResult.title}\nCompany: ${scrapeResult.company}\nLocation: ${scrapeResult.location}\nDescription: ${scrapeResult.description}`;
+              const response = await axios.post(
+                'https://api.firecrawl.dev/v0/scrape',
+                { 
+                  url: url,
+                  pageOptions: { onlyMainContent: true },
+                  extractorOptions: { mode: "markdown" } // Explicitly request markdown
+                },
+                {
+                  headers: {
+                    'Authorization': `Bearer ${firecrawlApiKey}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+              // Firecrawl's /v0/scrape endpoint returns an object like:
+              // { success: true, data: { content: "...", markdown: "...", metadata: {...} } }
+              // or { success: false, error: "..." }
+              if (response.data && response.data.success && response.data.data && response.data.data.markdown) {
+                return response.data.data.markdown;
+              } else if (response.data && response.data.success && response.data.data && response.data.data.content) {
+                // Fallback to HTML content if markdown is not directly available, though LLM prefers markdown
+                return response.data.data.content; 
+              } else {
+                console.error("Firecrawl API did not return expected markdown/content:", response.data);
+                return `Error: Could not extract markdown content from ${url}. Response: ${JSON.stringify(response.data)}`;
               }
-              return `Could not scrape content from ${url}. (Currently using mock data in this environment if not in Claude).`;
-
             } catch (error) {
-              console.error("Error in scrapeJobUrl tool:", error);
+              console.error("Error in scrapeJobUrl tool (Firecrawl API call):", error.response ? error.response.data : error.message);
               return `Error scraping URL ${url}: ${error.message}`;
             }
           },

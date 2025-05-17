@@ -81,7 +81,7 @@ This file documents the system architecture, key technical decisions, design pat
     - Exposes an HTTP endpoint (`/.netlify/functions/copilotkit-runtime`) for the frontend `CopilotChat`.
     - Configured with a 60-second timeout in `netlify.toml`.
     - **Tools/Actions:**
-        - `scrapeJobUrl`: Intended to use Firecrawl to scrape job URLs. Currently uses mock data in the Node.js environment due to `FirecrawlService` limitations (relies on `window.mcpRequest` which is unavailable in Netlify functions). Needs update for direct Firecrawl API call.
+        - `scrapeJobUrl`: Uses `axios` to make a direct API call to Firecrawl (`https://api.firecrawl.dev/v0/scrape`) using `FIRECRAWL_API_KEY`. Requests markdown content.
         - `submitJobPosting`: Intended to save finalized job data to Supabase. Requires secure handling of `employer_id` (user context).
 
 ## Component Relationships
