@@ -34,7 +34,10 @@ This file tracks what works, what's left to build, current status, and known iss
 - Successfully ran `scripts/fetchRapidApiInternshipsMCP.js` with 'Texas' and mandatory "high school" filters, fetching 33 jobs and increasing total RapidAPI jobs in DB to 85.
 - **CopilotKit Integration (PostJobPage):**
     - Installed CopilotKit packages (`@copilotkit/react-core`, `@copilotkit/react-ui`, `@copilotkit/runtime`) and `@google/generative-ai`.
-    - Rewrote `netlify/functions/copilotkit-runtime.js` to use `copilotRuntimeNodeHttpEndpoint` helper for request handling. This includes adapting Netlify's `event` to a mock Node.js `req` and using a `PassThrough` stream for a mock `res` to enable streaming responses. The runtime is configured with `GoogleGenerativeAIAdapter` (using `gemini-2.0-flash`).
+    - Rewrote `netlify/functions/copilotkit-runtime.js` to use `copilotRuntimeNodeHttpEndpoint` helper. This involved:
+        - Adapting Netlify's `event` to a mock Node.js `req`.
+        - Refining the mock Node.js `res` object to be an instance of `PassThrough` stream with added properties/methods for status/header capture, aiming for better compatibility and to resolve `removeListener` errors.
+        - Configuring the runtime with `GoogleGenerativeAIAdapter` (using `gemini-2.0-flash`).
     - Updated `scrapeJobUrl` tool in the runtime to call Firecrawl API v1 directly (`https://api.firecrawl.dev/v1/scrape`) with payload `{ url, formats: ["markdown"], pageOptions: { onlyMainContent: true } }` using `FIRECRAWL_API_KEY`.
     - Updated `submitJobPosting` tool in the runtime to use `userId` passed from frontend `CopilotKit` provider properties as `employer_id`.
     - Configured 60s timeout for `copilotkit-runtime` function in `netlify.toml`.

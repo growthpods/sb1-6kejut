@@ -170,61 +170,104 @@ export async function handler(event, context) {
     mockReq.url = event.path; // Or event.rawUrl which includes query params
     mockReq.headers = event.headers;
 
-    // Create a PassThrough stream to act as the writable part of res & readable part for Netlify
-    const responseStream = new PassThrough();
-    
-    const capturedHeaders = {};
-    let capturedStatusCode = 200; // Default
+    // Create a PassThrough stream that will serve as our mock ServerResponse object
+    // and also as the body stream for the Netlify function response.
+    const mockRes = new PassThrough();
 
-    const mockRes = {
-      writeHead: (statusCode, headers) => {
-        capturedStatusCode = statusCode;
-        for (const key in headers) {
-          capturedHeaders[key.toLowerCase()] = headers[key];
+    // Attach properties and methods to make it resemble http.ServerResponse
+    // for header and status code handling.
+    mockRes._capturedStatusCode = 200; // Default status code
+    mockRes._capturedHeaders = {};
+    mockRes._headersSent = false;
+
+    // statusCode property
+    Object.defineProperty(mockRes, 'statusCode', {
+      get: function() { return this._capturedStatusCode; },
+      set: function(val) {
+        if (this._headersSent) {
+          console.warn("Tried to set statusCode after headers were sent.");
+          return;
         }
+        this._capturedStatusCode = val;
       },
-      setHeader: (name, value) => {
-        capturedHeaders[name.toLowerCase()] = value;
-      },
-      getHeader: (name) => {
-        return capturedHeaders[name.toLowerCase()];
-      },
-      removeHeader: (name) => {
-        delete capturedHeaders[name.toLowerCase()];
-      },
-      write: (chunk) => responseStream.write(chunk),
-      end: (chunk) => {
-        if (chunk) responseStream.write(chunk);
-        responseStream.end();
-      },
-      on: (eventName, listener) => responseStream.on(eventName, listener), // Delegate stream events
-      once: (eventName, listener) => responseStream.once(eventName, listener),
-      emit: (eventName, ...args) => responseStream.emit(eventName, ...args),
-      // Add other methods if needed by copilotRuntimeNodeHttpEndpoint's handler
-      get statusCode() { return capturedStatusCode; }, // Allow reading status code
-      get headersSent() { return Object.keys(capturedHeaders).length > 0; } // A simple check
-    };
+      configurable: true,
+      enumerable: true
+    });
     
-    // Patch the res object to make it look more like a ServerResponse for copilotRuntimeNodeHttpEndpoint
-    Object.setPrototypeOf(mockRes, PassThrough.prototype);
-
-
-    const copilotKitEndpointHandler = copilotRuntimeNodeHttpEndpoint({
-      runtime, // The runtime instance now has actions and serviceAdapter configured
-      serviceAdapter, // Also pass adapter here as per Node HTTP example
-      endpoint: '/.netlify/functions/copilotkit-runtime', // The path this function is served at
+    // headersSent property
+    Object.defineProperty(mockRes, 'headersSent', {
+      get: function() { return this._headersSent; },
+      configurable: true,
+      enumerable: true
     });
 
-    // Call the handler. It will write to mockRes (which pipes to responseStream).
-    // This handler is likely synchronous in its setup and then handles async writes to res.
-    // We don't need to `await` it if it operates by writing to `res` and `res.end()`.
-    copilotKitEndpointHandler(mockReq, mockRes);
+    mockRes.setHeader = function(name, value) {
+      if (this._headersSent) {
+        console.warn("Tried to set header after headers were sent.");
+        return;
+      }
+      this._capturedHeaders[name.toLowerCase()] = value;
+    };
 
-    // Return the Netlify-compatible response with the stream
+    mockRes.getHeader = function(name) {
+      return this._capturedHeaders[name.toLowerCase()];
+    };
+
+    mockRes.removeHeader = function(name) {
+      if (this._headersSent) {
+        console.warn("Tried to remove header after headers were sent.");
+        return;
+      }
+      delete this._capturedHeaders[name.toLowerCase()];
+    };
+
+    mockRes.writeHead = function(statusCode, statusMessage, headers) {
+      if (this._headersSent) {
+        console.warn("Tried to writeHead after headers were sent.");
+        return;
+      }
+      this.statusCode = statusCode; // Uses the setter
+      let actualHeaders = headers;
+      if (typeof statusMessage === 'object' && statusMessage !== null) {
+        actualHeaders = statusMessage;
+      }
+      if (actualHeaders) {
+        for (const key in actualHeaders) {
+          this.setHeader(key, actualHeaders[key]);
+        }
+      }
+      this._headersSent = true;
+    };
+
+    // Wrap original .write and .end to manage _headersSent state
+    const originalWrite = mockRes.write;
+    mockRes.write = function(...args) {
+      if (!this._headersSent) {
+        this._headersSent = true;
+      }
+      return originalWrite.apply(this, args);
+    };
+
+    const originalEnd = mockRes.end;
+    mockRes.end = function(...args) {
+      if (!this._headersSent) {
+        this._headersSent = true;
+      }
+      return originalEnd.apply(this, args);
+    };
+
+    const copilotKitEndpointHandler = copilotRuntimeNodeHttpEndpoint({
+      runtime, 
+      serviceAdapter, 
+      endpoint: '/.netlify/functions/copilotkit-runtime',
+    });
+
+    copilotKitEndpointHandler(mockReq, mockRes); // This will write to mockRes (PassThrough stream)
+
     return {
-      statusCode: capturedStatusCode, // Will be updated by writeHead
-      headers: capturedHeaders, // Will be populated by setHeader/writeHead
-      body: responseStream,
+      statusCode: mockRes.statusCode, // Use the captured/set statusCode
+      headers: mockRes._capturedHeaders, 
+      body: mockRes, // mockRes is the PassThrough stream itself
       isBase64Encoded: false,
     };
 

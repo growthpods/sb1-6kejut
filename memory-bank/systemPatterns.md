@@ -78,7 +78,7 @@ This file documents the system architecture, key technical decisions, design pat
 - **Backend (Netlify Function - `copilotkit-runtime.js`):**
     - Uses `CopilotRuntime` (configured with actions and `GoogleGenerativeAIAdapter`) and the `copilotRuntimeNodeHttpEndpoint` helper from `@copilotkit/runtime` to process chat requests.
     - Adapts Netlify's `event` object to a Node.js `IncomingMessage`-like object (`mockReq`).
-    - Uses a `PassThrough` stream to create a Node.js `ServerResponse`-like object (`mockRes`) that captures the output from the CopilotKit handler and streams it back in the Netlify function's response.
+    - The mock Node.js `ServerResponse` object (`mockRes`) is now an instance of `PassThrough` stream, with added properties/methods for status/header capture. This aims to provide better compatibility with `copilotRuntimeNodeHttpEndpoint` and Netlify's streaming response capabilities.
     - Employs `GoogleGenerativeAIAdapter` to connect to Google Gemini (model `gemini-2.0-flash`).
     - Exposes an HTTP endpoint (`/.netlify/functions/copilotkit-runtime`) for the frontend `CopilotChat`.
     - Configured with a 60-second timeout in `netlify.toml`.
