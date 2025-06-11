@@ -21,11 +21,7 @@ export class GeminiClient {
    * Send a completion request to Gemini API
    */
   async createCompletion(
-    messages: { role: 'user' | 'model'; content: string }[],
-    options: {
-      temperature?: number;
-      maxOutputTokens?: number;
-    } = {}
+    messages: { role: 'user' | 'model'; content: string }[]
   ): Promise<string> {
     console.log('Gemini: Creating completion with model:', this.defaultModel);
     
@@ -116,14 +112,15 @@ let geminiClient: GeminiClient | null = null;
 export function getGeminiClient(): GeminiClient {
   if (!geminiClient) {
     let apiKey: string | undefined;
-    // Check for Vite environment (client-side)
-    if (typeof import.meta !== 'undefined' && import.meta.env) {
-      apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    }
-    
-    // Fallback to Node.js environment (server-side/scripts)
-    if (!apiKey && typeof process !== 'undefined' && process.env) {
+
+    // Prioritize Node.js environment variables for scripts/serverless functions
+    if (typeof process !== 'undefined' && process.env) {
       apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    }
+
+    // Fallback to Vite environment (client-side) if not found in process.env
+    if (!apiKey && typeof import.meta !== 'undefined' && import.meta.env) {
+      apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     }
 
     if (!apiKey) {

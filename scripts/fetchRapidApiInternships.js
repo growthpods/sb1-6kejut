@@ -23,6 +23,12 @@ const rapidApiHost = process.env.RAPIDAPI_INTERNSHIPS_HOST;
 // Create Supabase client
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+import { getEducationLevelParser } from '../src/lib/educationLevelParser.js';
+import { getTimeCommitmentParser } from '../src/lib/timeCommitmentParser.js';
+
+const educationLevelParser = getEducationLevelParser();
+const timeCommitmentParser = getTimeCommitmentParser();
+
 // Function to fetch internships from RapidAPI
 async function fetchInternships() {
   console.log('Fetching internships from RapidAPI...');
@@ -34,7 +40,7 @@ async function fetchInternships() {
       url: 'https://internships-api.p.rapidapi.com/active-jb-7d',
       params: {
         title_filter: 'intern OR internship OR "high school" OR "summer job"',
-        location_filter: 'United States',
+        location_filter: 'Houston, Texas',
         description_filter: 'student OR "high school" OR college OR intern',
         description_type: 'text'
       },
@@ -61,58 +67,9 @@ async function fetchInternships() {
   }
 }
 
-// Function to filter internships for US-based opportunities
-function filterInternships(internships) {
-  console.log('Filtering internships for US-based opportunities...');
-  
-  // Filter for US-based internships
-  const usInternships = internships.filter(internship => {
-    // Check countries_derived array
-    if (internship.countries_derived && internship.countries_derived.some(country => country.includes('United States'))) {
-      return true;
-    }
-    
-    // Check locations_raw
-    if (internship.locations_raw && internship.locations_raw.some(loc => 
-      loc.address && loc.address.addressCountry === 'US')) {
-      return true;
-    }
-    
-    // Check location string if available
-    const location = (internship.location || '').toLowerCase();
-    return location.includes('usa') || location.includes('united states') || 
-           location.includes('us') || location.includes('america');
-  });
-  
-  console.log(`Found ${usInternships.length} internships in the United States`);
-  
-  // Filter for student-friendly internships
-  const studentInternships = usInternships.filter(internship => {
-    const title = (internship.title || '').toLowerCase();
-    const description = (internship.description || '').toLowerCase();
-    
-    return (
-      title.includes('student') || 
-      description.includes('student') ||
-      title.includes('summer') || 
-      description.includes('summer') ||
-      title.includes('intern') || 
-      description.includes('intern') ||
-      title.includes('high school') || 
-      description.includes('high school') ||
-      title.includes('highschool') || 
-      description.includes('highschool') ||
-      title.includes('college') || 
-      description.includes('college')
-    );
-  });
-  
-  console.log(`Found ${studentInternships.length} student-friendly internships in the US`);
-  return studentInternships;
-}
 
 // Function to map RapidAPI internship data to our database schema
-function mapInternshipToJobSchema(internship) {
+async function mapInternshipToJobSchema(internship) {
   // Extract location from the API data
   let location = 'United States';
   if (internship.locations_derived && internship.locations_derived.length > 0) {
@@ -133,6 +90,18 @@ function mapInternshipToJobSchema(internship) {
   
   // Extract posted date
   const postedAt = internship.date_posted || new Date().toISOString();
+
+  const educationLevel = await educationLevelParser.parseEducationLevelFromText(
+    internship.title || '',
+    description,
+    []
+  );
+
+  const timeCommitment = await timeCommitmentParser.parseTimeCommitmentFromText(
+    internship.title || '',
+    description,
+    []
+  );
   
   return {
     title: internship.title || 'Untitled Internship',
@@ -141,31 +110,16 @@ function mapInternshipToJobSchema(internship) {
     description: description,
     requirements: [],
     type: 'Internship',
-    level: 'High School',
+    level: 'Entry Level',
     applicants: 0,
     posted_at: postedAt,
     external_link: applicationUrl,
     company_logo: companyLogo,
     employer_id: '00000000-0000-0000-0000-000000000000', // System user ID for API-sourced jobs
     application_url: applicationUrl,
-    time_commitment: determineTimeCommitment(internship)
+    time_commitment: timeCommitment,
+    education_level: educationLevel
   };
-}
-
-// Function to determine time commitment based on internship data
-function determineTimeCommitment(internship) {
-  const title = (internship.title || '').toLowerCase();
-  const descriptionText = (internship.description_text || '').toLowerCase();
-  
-  if (title.includes('summer') || descriptionText.includes('summer')) {
-    return 'Summer';
-  } else if (title.includes('weekend') || descriptionText.includes('weekend') || descriptionText.includes('saturday') || descriptionText.includes('sunday')) {
-    return 'Weekend';
-  } else if (title.includes('evening') || descriptionText.includes('evening') || descriptionText.includes('after school') || descriptionText.includes('after-school')) {
-    return 'Evening';
-  } else {
-    return null; // Default to null if time commitment can't be determined
-  }
 }
 
 // Function to check if an internship already exists in the database
@@ -208,7 +162,7 @@ async function insertInternships(internships) {
     }
     
     // Map internship to our job schema
-    const job = mapInternshipToJobSchema(internship);
+    const job = await mapInternshipToJobSchema(internship);
     
     // Insert into database
     const { error } = await supabase
@@ -227,7 +181,7 @@ async function insertInternships(internships) {
 }
 
 // Main function to run the script
-async function main() {
+export async function main() {
   console.log('Starting RapidAPI Internships fetch script...');
   
   // Fetch internships from RapidAPI
@@ -238,21 +192,15 @@ async function main() {
     return;
   }
   
-  // Filter internships for Houston, TX and high school students
-  const filteredInternships = filterInternships(internships);
-  
-  if (filteredInternships.length === 0) {
-    console.log('No matching internships found after filtering. Exiting.');
-    return;
-  }
-  
   // Insert internships into the database
-  await insertInternships(filteredInternships);
+  await insertInternships(internships);
   
   console.log('RapidAPI Internships fetch script completed successfully.');
 }
 
-// Run the script
-main().catch(error => {
-  console.error('Unexpected error in main function:', error);
-});
+// Run the script if called directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch(error => {
+    console.error('Unexpected error in main function:', error);
+  });
+}

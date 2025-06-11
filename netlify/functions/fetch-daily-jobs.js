@@ -266,3 +266,11 @@ export const handler = async (event, context) => {
     };
   }
 };
+
+import { pathToFileURL } from 'url';
+
+// This block allows the function to be run directly from the command line for testing
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  console.log('Running fetch-daily-jobs.js directly for testing...');
+  handler();
+}

@@ -1,23 +1,10 @@
 {
-  "extends": "./tsconfig.json", // Inherit base settings if needed, or define directly
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2023"],
-    "module": "ESNext", // Output ES modules
-    "skipLibCheck": true,
-    "moduleResolution": "Node", // Use Node resolution for scripts
-    "outDir": "./dist", // Output compiled JS to root dist folder
-    "rootDir": ".", // Root is the project directory
-    "noEmit": false, // Ensure JS files are emitted
-    "isolatedModules": false, // Not strictly needed for script compilation
-    "allowSyntheticDefaultImports": true, // Often helpful for Node modules
-    "esModuleInterop": true, // Standard for Node compatibility
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "resolveJsonModule": true // Allow importing JSON files if needed later
+    "module": "esnext",
+    "outDir": "./dist",
+    "rootDir": ".",
+    "types": ["vite/client"]
   },
-  "include": ["scripts/**/*.ts"], // Compile only files in the scripts directory
-  "exclude": ["node_modules", "src", "dist"] // Exclude src, node_modules, and dist itself
+  "include": ["scripts", "src/lib"]
 }

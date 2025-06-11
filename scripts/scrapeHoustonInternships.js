@@ -1,5 +1,5 @@
 "use strict";
-// Script to create sample high school internships in Houston and store them in the database
+// Script to scrape high school internships in Houston and store them in the database
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -7,12 +7,64 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const url_1 = require("url");
+const firecrawl_1 = require("../src/lib/firecrawl");
 const supabase_1 = require("../src/lib/supabase");
 const uuid_1 = require("uuid");
 // Get the directory name in ES module scope
 const __filename = (0, url_1.fileURLToPath)(import.meta.url);
 const __dirname = path_1.default.dirname(__filename);
 const markdownFilePath = path_1.default.resolve(__dirname, '../temp_scraped_markdown.md');
+// Define search terms and URLs for high school internships in Houston
+const searchUrls = [
+    'https://www.indeed.com/jobs?q=high+school+intern&l=Houston%2C+TX',
+    'https://www.indeed.com/jobs?q=high+school+internship&l=Houston%2C+TX',
+    'https://www.indeed.com/jobs?q=summer+intern+high+school&l=Houston%2C+TX',
+    'https://www.ziprecruiter.com/Jobs/High-School-Intern/--in-Houston,TX'
+];
+// Function to search and scrape job listings
+async function searchAndScrapeJobs() {
+    try {
+        console.log('Starting job search and scraping process...');
+        const firecrawl = (0, firecrawl_1.getFirecrawlService)();
+        let allMarkdown = '';
+        // Process each search URL
+        for (const url of searchUrls) {
+            console.log(`Searching and scraping jobs from: ${url}`);
+            try {
+                // Use the Firecrawl MCP server to search and scrape
+                const response = await window.mcpRequest({
+                    serverName: 'github.com/mendableai/firecrawl-mcp-server',
+                    toolName: 'firecrawl_scrape',
+                    arguments: {
+                        url,
+                        formats: ['markdown'],
+                        onlyMainContent: true
+                    }
+                });
+                if (response && typeof response === 'string') {
+                    console.log(`Successfully scraped content from ${url}`);
+                    allMarkdown += response + '\n\n';
+                }
+                else {
+                    console.warn(`No content returned from ${url}`);
+                }
+            }
+            catch (error) {
+                console.error(`Error scraping ${url}:`, error);
+            }
+            // Add a small delay between requests to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+        // Save all scraped content to a markdown file
+        fs_1.default.writeFileSync(markdownFilePath, allMarkdown);
+        console.log(`Saved scraped content to ${markdownFilePath}`);
+        // Parse the markdown and save to database
+        await parseAndSaveJobs();
+    }
+    catch (error) {
+        console.error('Error in search and scrape process:', error);
+    }
+}
 // Function to parse job listings from markdown and save to database
 async function parseAndSaveJobs() {
     console.log('Parsing job listings from markdown...');
@@ -45,7 +97,7 @@ async function parseAndSaveJobs() {
         }));
         // Save to Supabase
         console.log(`Attempting to upsert ${jobsToUpsert.length} jobs to Supabase...`);
-        const { error } = await supabase_1.supabase
+        const { data, error } = await supabase_1.supabase
             .from('jobs')
             .upsert(jobsToUpsert, {
             onConflict: 'title, company',
@@ -171,9 +223,18 @@ function extractApplicationUrl(markdown) {
     const applyMatch = markdown.match(/(?:Apply|Application).*?(https?:\/\/[^\s"]+)/i);
     return applyMatch ? applyMatch[1].trim() : null;
 }
+// Since we can't directly use the MCP server in a Node.js script,
+// we'll create a browser-based script that can be run in the browser
+// and then save the results to a file for processing
+console.log(`
+This script is designed to be run in a browser environment that has access to the MCP server.
+Please use the browser_action tool to run this script, or create a browser-based version
+that can interact with the MCP server.
+
+For now, we'll create some sample high school internship listings for Houston.
+`);
 // Create sample internship listings for testing
 function createSampleInternships() {
-    console.log('Creating sample internship listings for Houston...');
     const sampleMarkdown = `
 # Software Development Intern
 at TechHouston
@@ -316,5 +377,5 @@ To apply, visit https://houstonengineering.example.com/careers/internships
     // Parse and save the sample internships
     parseAndSaveJobs();
 }
-// Run the script
+// Create sample internships for testing
 createSampleInternships();

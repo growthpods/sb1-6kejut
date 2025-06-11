@@ -1,188 +1,115 @@
-// Script to read scraped markdown from a file, parse it, and save jobs to Supabase
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+import { getFirecrawlService, FirecrawlService } from '../src/lib/firecrawl';
 
-import fs from 'fs'; // Import file system module
-import path from 'path'; // Import path module
-import { v4 as uuidv4 } from 'uuid';
-import type { Job } from '../src/types'; // Assuming types are correctly defined here
-import { fileURLToPath } from 'url'; // Import fileURLToPath
-import { supabase } from '../src/lib/supabase'; // Import supabase client
+// Load environment variables from .env file
+config();
 
-// --- Read Scraped Markdown from File ---
-// Get the directory name in ES module scope
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-// Correct the path to go up one level from the script's directory
-const markdownFilePath = path.resolve(__dirname, '../temp_scraped_markdown.md');
-let scrapedMarkdown: string;
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-try {
-  scrapedMarkdown = fs.readFileSync(markdownFilePath, 'utf-8');
-  console.log(`Successfully read markdown from ${markdownFilePath}`);
-} catch (error: any) {
-  console.error(`Error reading markdown file at ${markdownFilePath}:`, error.message);
-  process.exit(1); // Exit if the file can't be read
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Supabase URL and service role key are required.');
 }
 
-// --- Simple Markdown Parser (Alternative Approach with Debugging) ---
-function parseIndeedMarkdown(markdown: string): Partial<Job>[] {
-    const jobs: Partial<Job>[] = [];
-    // Split by the markdown table separator, which seems to delimit job entries
-    const jobBlocks = markdown.split('| --- | --- |');
-    const maxJobs = 50; // Increased limit
+const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
+const firecrawl: FirecrawlService = getFirecrawlService();
 
-    console.log(`Parsing markdown, found ${jobBlocks.length} potential job blocks.`);
-
-    // Start from the second block as the first one is usually header/filters/ads
-    for (let i = 1; i < jobBlocks.length && jobs.length < maxJobs; i++) {
-        const block = jobBlocks[i].trim();
-        // Split lines, trim whitespace, and remove empty lines
-        const lines = block.split('\\n').map(line => line.trim()).filter(Boolean);
-
-        // console.log(`\nDEBUG: Processing Block ${i}:`);
-        // console.log(`  Lines (first 5):`, lines.slice(0, 5));
-
-        if (lines.length < 1) continue; // Need at least a title line
-
-        // Regex to capture title and external link from markdown link format ## [Title](Link)
-        const titleMatch = lines[0].match(/## \[(.*?)\]\((.*?)\)/);
-        if (!titleMatch || titleMatch.length < 3) {
-            // console.log(`  DEBUG: No title match found for line: ${lines[0]}`);
-            continue; // Couldn't find title/link
-        }
-        // console.log(`  DEBUG: Title match found: ${titleMatch[1]}`);
-
-        const title = titleMatch[1].trim();
-        const externalLink = titleMatch[2].trim();
-        let company = 'N/A';
-        let location = 'N/A';
-        let descriptionLines: string[] = [];
-        let companyLineIndex = -1;
-        let locationLineIndex = -1;
-
-        // Iterate through lines to find company and location, assuming a common structure
-        for (let j = 1; j < lines.length; j++) {
-            const line = lines[j];
-
-            // Skip logo lines
-            if (line.startsWith('![')) continue;
-            // Skip lines that are likely metadata/tags/buttons
-            if (line.startsWith('-') || line.includes('hour') || line.includes('week') || line.includes('Easily apply') || line.includes('EmployerActive') || line.includes('Typically responds') || line.includes('View similar') || line.includes('Hiring multiple') || line.startsWith('New<br>')) continue;
-
-            // Potential Company Line (often first non-metadata line after title)
-            if (company === 'N/A' && !line.includes(',')) { // Assume company names don't usually contain commas
-                 const companyMatch = line.match(/^([^<]*?)(?:<br>)?(?:[\d\.]+)?$/); // Try to extract text before <br> or rating
-                 if (companyMatch && companyMatch[1].trim()) {
-                     company = companyMatch[1].trim();
-                     companyLineIndex = j;
-                     continue; // Move to next line after finding company
-                 }
-            }
-
-            // Potential Location Line (often contains City, ST format)
-            if (location === 'N/A' && line.includes(',') && line.match(/[A-Z]{2}(\s+\d{5})?$/)) {
-                const potentialLocation = line.split('<br>')[0].trim(); // Take text before <br> if present
-                // Additional check to avoid lines that are just ratings or other text
-                if (!potentialLocation.match(/^\d+\.\d+$/) && potentialLocation.length < 50) { // Avoid overly long lines or just numbers
-                    location = potentialLocation;
-                    locationLineIndex = j;
-                    continue; // Move to next line after finding location
-                }
-            }
-
-            // Assume lines after company/location (whichever is found last) are part of the description
-            const lastFoundIndex = Math.max(companyLineIndex, locationLineIndex);
-            if (j > lastFoundIndex && lastFoundIndex !== -1) {
-                 // Filter out common footer/link lines from description
-                 if (!line.includes('View all') && !line.includes('Salary Search') && !line.includes('See popular')) {
-                    descriptionLines.push(line);
-                 }
-            }
-        }
-
-        // Join description lines, replace markdown escapes
-        const description = descriptionLines.join('\n').replace(/\\n/g, '\n').trim() || 'No description available.';
-
-
-        jobs.push({
-            title,
-            externalLink,
-            company,
-            location,
-            description,
-        });
-    }
-
-    return jobs;
-}
-
-
-async function processAndSaveJobs() {
-  console.log('Starting job processing...');
-
-  if (!scrapedMarkdown || scrapedMarkdown.trim() === '') {
-      console.error("Error: Scraped markdown content is empty or could not be read.");
-      return;
-  }
-
-  // --- Parse Scraped Data ---
-  const parsedJobs = parseIndeedMarkdown(scrapedMarkdown);
-  console.log(`Parsed ${parsedJobs.length} job listings from markdown.`);
-
-  if (parsedJobs.length === 0) {
-      console.log("No jobs parsed. Exiting.");
-      return;
-  }
-
-  // --- Format Data for Supabase ---
-  // Map parsed data to the expected Supabase table structure (snake_case)
-  // Generate UUIDs here before upserting
-  const jobsToUpsert = parsedJobs.map((jobData) => ({
-    id: uuidv4(), // Generate ID for each job
-    title: jobData.title || 'N/A',
-    company: jobData.company || 'N/A',
-    location: jobData.location || 'N/A',
-    description: jobData.description || 'No description available.',
-    // Default values for fields not parsed:
-    requirements: [], // Defaulting as parser doesn't extract this
-    type: 'Full-Time', // Defaulting
-    level: 'Entry Level', // Defaulting
-    applicants: 0,
-    posted_at: new Date().toISOString(), // Use current date/time for scraped jobs
-    external_link: jobData.externalLink || null, // Use null if undefined
-    company_logo: null, // Defaulting as parser doesn't extract this
-  }));
-  console.log(`Formatted ${jobsToUpsert.length} jobs for Supabase.`);
-
-  // --- Save Data to Supabase ---
+/**
+ * Scrapes job listings from a given URL and returns them.
+ * @param url The URL to scrape.
+ * @returns A promise that resolves to an array of job listings.
+ */
+async function scrapeJobs(url: string): Promise<any[]> {
   try {
-    console.log(`Attempting to upsert ${jobsToUpsert.length} jobs to Supabase...`);
-    const { data, error } = await supabase
-      .from('jobs')
-      .upsert(jobsToUpsert, {
-         onConflict: 'title, company', // Avoid duplicates based on title and company
-         ignoreDuplicates: true // Changed from false to true - don't error on duplicate, just skip
+    console.log(`Scraping jobs from: ${url}`);
+    const jobs = await firecrawl.scrapeJobListing(url);
+    if (jobs && jobs.length > 0) {
+      console.log(`Successfully scraped ${jobs.length} jobs.`);
+      return jobs;
+    } else {
+      console.log('No jobs found or scraping failed.');
+      return [];
+    }
+  } catch (error) {
+    console.error('Error scraping jobs:', error);
+    return [];
+  }
+}
+
+/**
+ * Inserts job listings into the Supabase database.
+ * @param jobs The job listings to insert.
+ * @param source The source of the job listings.
+ */
+async function insertJobs(jobs: any[], source: string): Promise<void> {
+  if (jobs.length === 0) {
+    console.log('No jobs to insert.');
+    return;
+  }
+
+  console.log(`Inserting ${jobs.length} jobs from ${source} into the database...`);
+
+  for (const job of jobs) {
+    try {
+      const { data: existingJob, error: selectError } = await supabase
+        .from('jobs')
+        .select('id')
+        .eq('title', job.title)
+        .eq('company', job.company)
+        .eq('location', job.location)
+        .single();
+
+      if (selectError && selectError.code !== 'PGRST116') {
+        console.error(`Error checking for existing job: ${job.title}`, selectError);
+        continue;
+      }
+
+      if (existingJob) {
+        console.log(`Job "${job.title}" by ${job.company} already exists. Skipping.`);
+        continue;
+      }
+
+      const { error: insertError } = await supabase.from('jobs').insert({
+        title: job.title,
+        company: job.company,
+        location: job.location,
+        description: job.description,
+        application_url: job.applicationUrl,
+        source: source,
+        posted_at: new Date().toISOString(),
       });
 
-    if (error) {
-      console.error('Supabase upsert error:', error.message);
-      throw error;
-    }
-
-    // Supabase upsert with ignoreDuplicates might return null for data even on success
-    console.log(`Supabase upsert operation completed.`);
-    // console.log('Upsert result data:', data); // Data might be null
-
-  } catch (error) {
-    console.error('Error saving jobs to Supabase:', error);
-  } finally {
-    // --- Clean up temporary file ---
-    try {
-      fs.unlinkSync(markdownFilePath);
-      console.log(`Successfully deleted temporary file: ${markdownFilePath}`);
-    } catch (cleanupError: any) {
-      console.error(`Error deleting temporary file ${markdownFilePath}:`, cleanupError.message);
+      if (insertError) {
+        console.error(`Error inserting job: ${job.title}`, insertError);
+      } else {
+        console.log(`Successfully inserted job: ${job.title}`);
+      }
+    } catch (error) {
+      console.error(`An unexpected error occurred while inserting job: ${job.title}`, error);
     }
   }
 }
 
-processAndSaveJobs();
+/**
+ * The main function to run the job scraping and insertion process.
+ */
+async function main() {
+  const sources = [
+    { name: 'LinkedIn', url: 'https://www.linkedin.com/jobs/search/?keywords=Software%20Engineer%20Intern&location=Texas%2C%20United%20States' },
+    { name: 'Indeed', url: 'https://www.indeed.com/jobs?q=internship&l=Texas' },
+    { name: 'Glassdoor', url: 'https://www.glassdoor.com/Job/texas-internship-jobs-SRCH_IL.0,5_IS1347_KO6,16.htm' },
+  ];
+
+  try {
+    for (const source of sources) {
+      const scrapedJobs = await scrapeJobs(source.url);
+      await insertJobs(scrapedJobs, source.name);
+    }
+    console.log('Job scraping and insertion process completed.');
+  } catch (error) {
+    console.error('An error occurred in the main process:', error);
+  }
+}
+
+main();

@@ -106,10 +106,7 @@ export class JobPostingService {
       ];
 
       // Get response from LLM
-      const response = await this.gemini.createCompletion(messages, {
-        temperature: 0.7,
-        maxOutputTokens: 1000
-      });
+      const response = await this.gemini.createCompletion(messages);
 
       // Extract any job data updates from the response
       const updatedJobData = await this.extractJobDataFromResponse(

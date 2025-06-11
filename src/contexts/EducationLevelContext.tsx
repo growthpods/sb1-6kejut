@@ -3,6 +3,8 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 interface EducationLevelContextProps {
   educationLevel: string | null;
   setEducationLevel: (level: string | null) => void;
+  clearEducationLevel: () => void; // Function to clear the education level
+  isEducationLevelSet: boolean; // Flag to check if education level is set
   showModal: boolean;
   setShowModal: (show: boolean) => void;
 }
@@ -10,6 +12,8 @@ interface EducationLevelContextProps {
 const EducationLevelContext = createContext<EducationLevelContextProps>({
   educationLevel: null,
   setEducationLevel: () => {},
+  clearEducationLevel: () => {},
+  isEducationLevelSet: false,
   showModal: false,
   setShowModal: () => {},
 });
@@ -20,30 +24,46 @@ interface EducationLevelProviderProps {
 
 export const EducationLevelProvider: React.FC<EducationLevelProviderProps> = ({ children }) => {
   const [educationLevel, setEducationLevel] = useState<string | null>(null);
+  const [isEducationLevelSet, setIsEducationLevelSet] = useState<boolean>(false);
   const [showModal, setShowModal] = useState<boolean>(false);
 
   useEffect(() => {
-    // Check if education level is stored in localStorage
     const storedLevel = localStorage.getItem('educationLevel');
     if (storedLevel) {
       setEducationLevel(storedLevel);
+      setIsEducationLevelSet(true);
     } else {
-      // If no education level is stored, show the modal
       setShowModal(true);
     }
   }, []);
 
-  useEffect(() => {
-    // Update localStorage when education level changes
-    if (educationLevel) {
-      localStorage.setItem('educationLevel', educationLevel);
+  const handleSetEducationLevel = (level: string | null) => {
+    setEducationLevel(level);
+    setIsEducationLevelSet(!!level);
+    if (level) {
+      localStorage.setItem('educationLevel', level);
     } else {
       localStorage.removeItem('educationLevel');
     }
-  }, [educationLevel]);
+  };
+
+  const clearEducationLevel = () => {
+    setEducationLevel(null);
+    setIsEducationLevelSet(false);
+    localStorage.removeItem('educationLevel');
+  };
 
   return (
-    <EducationLevelContext.Provider value={{ educationLevel, setEducationLevel, showModal, setShowModal }}>
+    <EducationLevelContext.Provider 
+      value={{ 
+        educationLevel, 
+        setEducationLevel: handleSetEducationLevel, 
+        clearEducationLevel,
+        isEducationLevelSet,
+        showModal, 
+        setShowModal 
+      }}
+    >
       {children}
     </EducationLevelContext.Provider>
   );

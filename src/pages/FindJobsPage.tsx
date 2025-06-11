@@ -8,7 +8,7 @@ import type { Job } from '../types';
 import { useEducationLevel } from '../contexts/EducationLevelContext';
 
 export function FindJobsPage() {
-  const { educationLevel } = useEducationLevel();
+  const { educationLevel, clearEducationLevel } = useEducationLevel();
   const [allJobs, setAllJobs] = useState<Job[]>([]); // Holds all fetched jobs
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,7 +53,8 @@ export function FindJobsPage() {
       }
     }
     fetchAllJobs();
-  }, [searchQuery, location, filters]);
+  }, [educationLevel]);
+
 
   async function fetchSupabaseJobs() {
     try {
@@ -117,7 +118,7 @@ export function FindJobsPage() {
         ...job,
         postedAt: new Date(job.posted_at),
         timeCommitment: job.time_commitment, // Map from snake_case to camelCase
-        educationLevel: job.education_level, // Map from snake_case to camelCase
+        educationLevel: job.manual_education_level || job.education_level, // Prioritize manual_education_level
         source: job.source || 'supabase' // Add source identifier with fallback
       }));
       
@@ -277,6 +278,14 @@ export function FindJobsPage() {
                 <span className="text-gray-500 text-base md:text-lg ml-2">
                   ({filteredJobs.length})
                 </span>
+                {educationLevel && (
+                  <button 
+                    onClick={() => clearEducationLevel()} 
+                    className="ml-4 text-sm text-blue-500 hover:underline"
+                  >
+                    (Clear Filter)
+                  </button>
+                )}
               </h2>
               <select className="w-full sm:w-auto px-3 py-2 md:px-4 md:py-2 border rounded-lg bg-white">
                 <option>Most recent</option>
