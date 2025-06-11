@@ -29,32 +29,27 @@ if (supabaseUrl && supabaseServiceRoleKey) {
   console.error('Supabase URL or Service Role Key is not configured in environment variables. Function will not be able to connect to Supabase.');
 }
 
-async function deleteOldRapidApiJobs() {
+async function deleteOldJobs() {
   if (!supabase) {
-    console.error('Supabase client not initialized. Skipping deleteOldRapidApiJobs.');
+    console.error('Supabase client not initialized. Skipping deleteOldJobs.');
     return;
   }
-  console.log('Attempting to delete old RapidAPI jobs (older than 2 months)...');
-  
+  console.log('Attempting to delete all jobs older than 2 months...');
   // Calculate date 2 months ago
   const twoMonthsAgo = new Date();
   twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
-
   try {
     const { error } = await supabase
       .from('jobs')
       .delete()
-      .eq('source', 'RapidAPI')
       .lt('posted_at', twoMonthsAgo.toISOString());
-
     if (error) {
-      console.error('Error deleting old RapidAPI jobs from Supabase:', error);
-      // Do not re-throw, allow process to continue to fetching if deletion fails for some reason
+      console.error('Error deleting old jobs from Supabase:', error);
     } else {
-      console.log('Successfully deleted old RapidAPI jobs.');
+      console.log('Successfully deleted all jobs older than 2 months.');
     }
   } catch (error) {
-    console.error('Exception during deleteOldRapidApiJobs:', error);
+    console.error('Exception during deleteOldJobs:', error);
   }
 }
 
@@ -236,7 +231,7 @@ export const handler = async (event, context) => {
 
 
   try {
-    await deleteOldRapidApiJobs();
+    await deleteOldJobs();
     const rawInternships = await fetchInternshipsFromRapidAPI();
 
     if (rawInternships.length === 0) {
