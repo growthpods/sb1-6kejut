@@ -4,6 +4,8 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
+import { getEducationLevelParser } from '../../src/lib/educationLevelParser.js';
+import { getTimeCommitmentParser } from '../../src/lib/timeCommitmentParser.js';
 
 // Initialize dotenv to load environment variables (primarily for local testing if any)
 // Netlify build process should make these available in the function's environment
@@ -28,6 +30,9 @@ if (supabaseUrl && supabaseServiceRoleKey) {
 } else {
   console.error('Supabase URL or Service Role Key is not configured in environment variables. Function will not be able to connect to Supabase.');
 }
+
+const educationLevelParser = getEducationLevelParser();
+const timeCommitmentParser = getTimeCommitmentParser();
 
 async function deleteOldJobs() {
   if (!supabase) {
@@ -54,7 +59,7 @@ async function deleteOldJobs() {
 }
 
 async function fetchInternshipsFromRapidAPI() {
-  console.log('Fetching all internships from RapidAPI for Texas...');
+  console.log('Fetching internships from RapidAPI for Texas (simple mode)...');
   if (!rapidApiKey || !rapidApiHost) {
     console.error('RapidAPI Key or Host is not configured in environment variables.');
     return [];
@@ -64,52 +69,30 @@ async function fetchInternshipsFromRapidAPI() {
     return [];
   }
 
-
-  let allInternships = [];
-  let currentOffset = 0;
-  let keepFetching = true;
-  let page = 1;
-
-  while (keepFetching) {
-    console.log(`Fetching page ${page} with offset ${currentOffset}...`);
-    try {
-      const options = {
-        method: 'GET',
-        url: `https://${rapidApiHost}/active-jb-7d`,
-        params: {
-          title_filter: 'intern OR internship OR "summer job"', // Removed "high school" requirement
-          location_filter: 'Texas', // Updated to broader 'Texas' filter
-          description_filter: 'student OR college OR intern', // Removed "high school" requirement
-          description_type: 'text',
-          offset: currentOffset,
-        },
-        headers: {
-          'x-rapidapi-key': rapidApiKey,
-          'x-rapidapi-host': rapidApiHost
-        }
-      };
-      const response = await axios.request(options);
-      
-      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-        console.log(`Received ${response.data.length} internships on page ${page}.`);
-        allInternships = allInternships.concat(response.data);
-        currentOffset += response.data.length; 
-        page++;
-        if (response.data.length < 10) { 
-             console.log('Likely fetched all available jobs for the current filter (received less than 10 items).');
-             keepFetching = false;
-        }
-      } else {
-        console.log(`No more internships found on page ${page} or unexpected response.`);
-        keepFetching = false; 
+  try {
+    const options = {
+      method: 'GET',
+      url: `https://${rapidApiHost}/active-jb-7d`,
+      params: {
+        location_filter: 'Texas'
+      },
+      headers: {
+        'x-rapidapi-key': rapidApiKey,
+        'x-rapidapi-host': rapidApiHost
       }
-    } catch (error) {
-      console.error(`Error fetching internships from RapidAPI on page ${page}:`, error.response ? error.response.data : error.message);
-      keepFetching = false; 
+    };
+    const response = await axios.request(options);
+    if (response.data && Array.isArray(response.data)) {
+      console.log(`Received ${response.data.length} internships from RapidAPI.`);
+      return response.data;
+    } else {
+      console.log('No internships found or unexpected response.');
+      return [];
     }
+  } catch (error) {
+    console.error('Error fetching internships from RapidAPI:', error.response ? error.response.data : error.message);
+    return [];
   }
-  console.log(`Total internships fetched for Texas: ${allInternships.length}`);
-  return allInternships;
 }
 
 function filterFetchedInternships(internships) {
@@ -141,7 +124,7 @@ function filterFetchedInternships(internships) {
   });
 }
 
-function mapToJobSchema(internship) {
+function mapToJobSchema(internship, educationLevel, timeCommitment) {
   let location = 'Houston, TX, USA'; 
   if (internship.locations_derived && internship.locations_derived.length > 0) {
     const specificLocation = internship.locations_derived[0];
@@ -153,12 +136,11 @@ function mapToJobSchema(internship) {
   }
 
   return {
-    // id: uuidv4(), // Supabase can auto-generate if PK is set to default to gen_random_uuid()
     title: internship.title || 'Untitled Internship',
     company: internship.organization || 'Unknown Company',
     location: location,
     description: internship.description_text || 'No description provided.',
-    requirements: [], // Defaulting as not reliably parsed from this API
+    requirements: [],
     type: 'Internship',
     level: 'Entry Level', 
     applicants: 0,
@@ -167,19 +149,11 @@ function mapToJobSchema(internship) {
     company_logo: internship.organization_logo || null,
     employer_id: '00000000-0000-0000-0000-000000000000', 
     application_url: internship.url || null,
-    time_commitment: determineTimeCommitment(internship),
+    time_commitment: timeCommitment,
+    education_level: educationLevel,
     source: 'RapidAPI',
     career_site_url: internship.linkedin_org_url || null
   };
-}
-
-function determineTimeCommitment(internship) {
-  const title = (internship.title || '').toLowerCase();
-  const descriptionText = (internship.description_text || '').toLowerCase();
-  if (title.includes('summer') || descriptionText.includes('summer')) return 'Summer';
-  if (title.includes('weekend') || descriptionText.includes('weekend')) return 'Weekend';
-  if (title.includes('evening') || descriptionText.includes('evening')) return 'Evening';
-  return null;
 }
 
 async function insertJobsToSupabase(jobs) {
@@ -193,17 +167,11 @@ async function insertJobsToSupabase(jobs) {
   }
   console.log(`Attempting to insert/upsert ${jobs.length} jobs into Supabase...`);
 
-  // Using upsert with onConflict. Ensure your 'jobs' table has a unique constraint 
-  // on (title, company, location) for this to work as "DO NOTHING" on conflict.
-  // If not, this might error or create duplicates if IDs are not managed carefully.
-  // The `ignoreDuplicates: false` (default) means it will error on conflict if not updating.
-  // To truly "DO NOTHING", the constraint is key.
-  // Alternatively, if 'external_link' is guaranteed unique for new jobs, it could be a conflict target.
   const { data, error } = await supabase
     .from('jobs')
     .upsert(jobs, {
-      onConflict: 'title,company', // Using the existing unique constraint
-      ignoreDuplicates: true // This makes it behave like ON CONFLICT DO NOTHING for the specified constraint
+      onConflict: 'title,company',
+      ignoreDuplicates: true
     });
 
   if (error) {
@@ -229,7 +197,6 @@ export const handler = async (event, context) => {
      return { statusCode: 500, body: 'Server configuration error: Supabase client init failed.'};
   }
 
-
   try {
     await deleteOldJobs();
     const rawInternships = await fetchInternshipsFromRapidAPI();
@@ -244,8 +211,32 @@ export const handler = async (event, context) => {
       console.log('No student-friendly internships after filtering.');
       return { statusCode: 200, body: 'No student-friendly internships found.' };
     }
-    
-    const jobsToInsert = studentFriendlyInternships.map(mapToJobSchema);
+
+    // AI parsing/classification step
+    const jobsToInsert = [];
+    for (const internship of studentFriendlyInternships) {
+      let educationLevel = null;
+      let timeCommitment = null;
+      try {
+        educationLevel = await educationLevelParser.parseEducationLevelFromText(
+          internship.title || '',
+          internship.description_text || internship.description || '',
+          []
+        );
+      } catch (e) {
+        console.error(`Error classifying education level for "${internship.title}":`, e);
+      }
+      try {
+        timeCommitment = await timeCommitmentParser.parseTimeCommitmentFromText(
+          internship.title || '',
+          internship.description_text || internship.description || '',
+          []
+        );
+      } catch (e) {
+        console.error(`Error classifying time commitment for "${internship.title}":`, e);
+      }
+      jobsToInsert.push(mapToJobSchema(internship, educationLevel, timeCommitment));
+    }
     await insertJobsToSupabase(jobsToInsert);
 
     console.log('Netlify Scheduled Function "fetch-daily-jobs" completed successfully.');
