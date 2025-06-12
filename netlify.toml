@@ -15,7 +15,7 @@
 
 # Scheduled function to fetch daily jobs
 [functions."fetch-daily-jobs"]
-  schedule = "0 8 * * *" # Runs daily at 8:00 AM UTC (2:00 AM CDT / 3:00 AM CST)
+  schedule = "0 11 * * *" # Runs daily at 11:00 AM UTC (5:00 AM CST)
 
 # CopilotKit runtime functions are removed as CopilotKit Cloud is being used.
 # [functions."copilotkit-runtime"]

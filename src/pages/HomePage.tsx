@@ -4,7 +4,7 @@ import { JobCard } from '../components/JobCard';
 import { JobFilters } from '../components/job/JobFilters';
 import { supabase } from '../lib/supabase';
 import type { Job } from '../types';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Clock, Briefcase, MapPin, ArrowRight, Search, Building2, GraduationCap } from 'lucide-react';
 import { useEducationLevel } from '../contexts/EducationLevelContext';
 
@@ -28,6 +28,7 @@ export function HomePage() {
     datePosted: 'Any time' 
   });
   const jobsRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Update filters when educationLevel changes
   useEffect(() => {
@@ -121,10 +122,9 @@ export function HomePage() {
     });
   }, [allJobs, searchQuery, location, filters]);
 
-  // Update search state
+  // Update search state: now redirects to /find-jobs with params
   const handleSearch = (query: string, loc: string) => {
-    setSearchQuery(query);
-    setLocation(loc);
+    navigate(`/find-jobs?search=${encodeURIComponent(query)}&location=${encodeURIComponent(loc)}`);
   };
 
   // Update filter state

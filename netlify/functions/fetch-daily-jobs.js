@@ -89,12 +89,28 @@ async function fetchPage(offset) {
 }
 
 function rulePreTag(job) {
-  // Simple rule-based tagging: skip LLM if obvious
+  // Improved rule-based tagging for high school and college jobs
   const title = job.title?.toLowerCase() || '';
-  if (title.includes('high school')) return { ...job, education_level: 'High School', pretagged: true };
-  if (title.includes('college')) return { ...job, education_level: 'College', pretagged: true };
-  if (title.includes('intern')) return { ...job, education_level: 'College', pretagged: true };
-  // Add more rules as needed
+  const description = job.description?.toLowerCase() || '';
+
+  // High School: flexible schedule, simple tasks, no college mention
+  const highSchoolKeywords = [
+    'high school', 'evening', 'weekend', 'after school', 'summer only', 'part-time', 'camp counselor', 'retail', 'food service', 'office assistant', 'student assistant', 'helper', 'cashier', 'lifeguard', 'babysitter', 'tutor', 'receptionist', 'host', 'hostess', 'crew member', 'barista', 'busser', 'dishwasher', 'grocery', 'store associate', 'delivery', 'runner', 'usher', 'movie theater', 'library assistant', 'summer intern', 'general intern', 'student intern'
+  ];
+  const collegeKeywords = [
+    'college', 'university', 'bachelor', 'research', 'engineering', 'software', 'developer', 'programming', 'analysis', 'analyst', 'lab', 'project management', 'business', 'finance', 'marketing intern', 'data science', 'graduate', 'junior', 'senior', 'major', 'gpa', 'field of study', 'degree', 'enrolled', 'academic', 'professional', 'technical', 'design', 'consulting', 'audit', 'accounting', 'legal', 'law', 'medical', 'clinical', 'pharmacy', 'biotech', 'stem', 'internship'
+  ];
+
+  // If any high school keyword is present and no college keyword, pretag as High School
+  if (highSchoolKeywords.some(k => title.includes(k) || description.includes(k)) &&
+      !collegeKeywords.some(k => title.includes(k) || description.includes(k))) {
+    return { ...job, education_level: 'High School', pretagged: true };
+  }
+  // If any college keyword is present, pretag as College
+  if (collegeKeywords.some(k => title.includes(k) || description.includes(k))) {
+    return { ...job, education_level: 'College', pretagged: true };
+  }
+  // Default: not pretagged
   return { ...job, pretagged: false };
 }
 

@@ -22,39 +22,27 @@ export class EducationLevelParser {
    */
   async parseEducationLevel(jobData: any): Promise<'High School' | 'College'> {
     try {
-      // Create a prompt for the LLM to analyze the job data
+      // Updated prompt: Focus on real-world suitability, not just education requirements
       const prompt = `
-I need you to analyze this job posting information and determine whether it's more appropriate for a high school student or a college student who is still studying.
+I need you to analyze this job posting and determine if it is truly suitable for a high school student (entry-level, simple tasks, flexible schedule, no specialized skills) or a college student (specialized, technical, or field-specific tasks, may require prior experience or advanced skills).
+
+**Do NOT use formal education requirements as the main criteria.** Only consider them if they are a clear barrier (e.g., 'must be enrolled in college').
+
+Focus on:
+- Schedule flexibility (evenings, weekends, summer, after school, part-time)
+- Task complexity (simple/repetitive/support vs. specialized/technical/field-specific)
+- Required skills (basic vs. advanced/field-specific)
+- Level of responsibility (direct supervision vs. independent/project work)
+- Typical age/experience of successful candidates
+
+If the job is only appropriate for a college student due to complexity, technical skills, or independence, classify as "College".
+If the job is simple, flexible, and could realistically be done by a high schooler, classify as "High School".
+If unsure, make a reasonable guess and append " (guessed by AI)".
 
 Job Information:
 ${JSON.stringify(jobData, null, 2)}
 
-Please analyze the following aspects carefully:
-1. Required education level mentioned (if any)
-2. Required skills and their complexity
-   - High school students typically have basic computer skills, communication skills, and may know some entry-level programming
-   - College students typically have more advanced technical skills, specialized knowledge in their field of study
-3. Required experience level
-   - High school students typically have little to no professional experience
-   - College students may have previous internships or part-time work experience
-4. Job responsibilities and their complexity
-   - High school appropriate: data entry, customer service, basic administrative tasks, social media assistance
-   - College appropriate: specialized research, complex analysis, project management, specialized technical work
-5. Time commitment required
-   - High school students need more flexible schedules around school hours
-   - College students may have more flexible daytime availability
-6. Any specific mentions of "high school" or "college" students
-7. Required coursework or academic background
-   - Jobs requiring specific college coursework are clearly for college students
-
-Based on your analysis, determine if this job is more suitable for:
-- High School students (less complex, entry-level, minimal experience required, basic skills)
-- College students (more complex, may require specific coursework, higher skill level, specialized knowledge)
-
-If the information is not explicit, make a reasonable guess and append " (guessed by AI)" to your answer (e.g., "College (guessed by AI)"). If you cannot make a reasonable guess, return "Unknown".
-
-Return ONLY "High School", "College", "High School (guessed by AI)", "College (guessed by AI)", or "Unknown". Do not add any other text.
-`;
+Return ONLY "High School", "College", "High School (guessed by AI)", "College (guessed by AI)", or "Unknown". Do not add any other text.`;
 
       // Get analysis from LLM
       const analysis = await this.gemini.createCompletion([
@@ -101,9 +89,22 @@ Return ONLY "High School", "College", "High School (guessed by AI)", "College (g
       return manualOverride;
     }
     try {
-      // Improved prompt: Be stricter about degree requirements
+      // Updated prompt: Focus on real-world suitability, not just education requirements
       const prompt = `
-I need you to analyze this job posting information and determine whether it's more appropriate for a high school student or a college student who is still studying.
+I need you to analyze this job posting and determine if it is truly suitable for a high school student (entry-level, simple tasks, flexible schedule, no specialized skills) or a college student (specialized, technical, or field-specific tasks, may require prior experience or advanced skills).
+
+**Do NOT use formal education requirements as the main criteria.** Only consider them if they are a clear barrier (e.g., 'must be enrolled in college').
+
+Focus on:
+- Schedule flexibility (evenings, weekends, summer, after school, part-time)
+- Task complexity (simple/repetitive/support vs. specialized/technical/field-specific)
+- Required skills (basic vs. advanced/field-specific)
+- Level of responsibility (direct supervision vs. independent/project work)
+- Typical age/experience of successful candidates
+
+If the job is only appropriate for a college student due to complexity, technical skills, or independence, classify as "College".
+If the job is simple, flexible, and could realistically be done by a high schooler, classify as "High School".
+If unsure, make a reasonable guess and append " (guessed by AI)".
 
 Job Title: ${title}
 
@@ -112,56 +113,7 @@ ${description}
 
 ${requirements ? `Requirements:\n${requirements.join('\n')}` : ''}
 
-Please analyze the following aspects carefully and be very strict with your classification:
-1.  **Explicit College Requirements (CRITICAL):** If the job explicitly states *any* of the following, it is for **College students ONLY**:
-    *   "college enrollment"
-    *   "bachelor's degree"
-    *   "university student"
-    *   "post-secondary coursework"
-    *   "currently pursuing a Bachelor's or Master's degree"
-    *   "finishing or completed junior year of college"
-    *   "graduate student"
-    *   "pursuing a degree"
-    *   "enrolled in a college/university"
-    *   "college credit"
-    *   "relevant college major"
-    *   "academic standing" (e.g., sophomore, junior, senior)
-    *   Any specific academic major or field of study (e.g., "Computer Science," "Engineering," "Business Administration") that implies college-level study.
-    *   Any requirement for a specific GPA.
-
-2.  **Skills and Complexity:**
-    *   **High School appropriate:** Basic computer skills, communication skills, general office software (e.g., Microsoft Office basics), social media usage, data entry, simple content creation, basic administrative tasks.
-    *   **College appropriate:** Advanced technical skills, specialized software proficiency (e.g., CAD, specific programming languages beyond basics, data analysis tools), in-depth research, complex problem-solving, theoretical knowledge in a specific field.
-
-3.  **Experience Level:**
-    *   **High School appropriate:** Little to no professional experience, volunteer work, school projects, extracurricular activities.
-    *   **College appropriate:** Previous internships, significant part-time work experience, experience in a professional or academic research setting.
-
-4.  **Job Responsibilities:**
-    *   **High School appropriate:** Support roles, general assistance, repetitive tasks, learning-focused roles with direct supervision.
-    *   **College appropriate:** Independent project work, leading small initiatives, complex analysis, design, development, or research tasks.
-
-5.  **Time Commitment:**
-    *   **High School appropriate:** Flexible schedules around school hours (e.g., evening, weekend, summer-only, part-time during school year).
-    *   **College appropriate:** Full-time summer commitments, roles that require significant daytime availability during the academic year.
-
-6.  **Job Title Implications:**
-    *   **College-leaning titles:** "Research Assistant," "Engineering Intern," "Software Development Intern," "Business Analyst Intern," "Data Science Intern," or any title explicitly mentioning a specialized field that typically requires college study.
-    *   **High School-leaning titles:** "Office Assistant," "Customer Service Representative," "Marketing Assistant," "Summer Intern," "General Intern," "Student Intern" (if no explicit college requirements are present).
-
-**Decision Rule:**
-*   If *any* of the "Explicit College Requirements" (point 1) are met, classify as "College".
-*   Otherwise, if the job is a general "Internship" or "Assistant" role and does *not* explicitly state any college requirements, classify as "High School".
-*   If the job is clearly a professional role (not an internship/assistant) and has no explicit education level, default to "College".
-
-Based on your analysis, determine if this job is more suitable for:
-- High School (if NO explicit college requirements are found, and it's a general internship/assistant role)
-- College (if ANY explicit college requirements are found, or it's a professional role)
-
-If the information is not explicit and you cannot confidently classify based on the above rules, make a reasonable guess and append " (guessed by AI)" to your answer (e.g., "College (guessed by AI)"). If you cannot make a reasonable guess, return "Unknown".
-
-Return ONLY "High School", "College", "High School (guessed by AI)", "College (guessed by AI)", or "Unknown". Do not add any other text.
-`;
+Return ONLY "High School", "College", "High School (guessed by AI)", "College (guessed by AI)", or "Unknown". Do not add any other text.`;
 
       // Get analysis from LLM
       const analysis = await this.gemini.createCompletion([
