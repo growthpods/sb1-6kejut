@@ -6,45 +6,25 @@ import { JobFilters } from '../components/job/JobFilters';
 import { supabase } from '../lib/supabase';
 import type { Job } from '../types';
 import { useEducationLevel } from '../contexts/EducationLevelContext';
+import { useJobFilters } from '../contexts/JobFilterContext';
 
 export function FindJobsPage() {
   const { educationLevel, clearEducationLevel } = useEducationLevel();
+  const { filters, setFilters, updateFilter } = useJobFilters();
   const [allJobs, setAllJobs] = useState<Job[]>([]); // Holds all fetched jobs
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [location, setLocation] = useState('');
   const [supabaseJobs, setSupabaseJobs] = useState<Job[]>([]); // Holds jobs from Supabase
   
-  // Filters state including timeCommitment and educationLevel
-  const [filters, setFilters] = useState<{ 
-    type: string; 
-    level: string; 
-    educationLevel?: string;
-    timeCommitment?: string;
-    datePosted: string 
-  }>({ 
-    type: 'All', 
-    level: 'All', 
-    educationLevel: educationLevel || undefined,
-    timeCommitment: undefined,
-    datePosted: 'Any time' 
-  });
-
   // Update filters when educationLevel changes
   useEffect(() => {
-    if (educationLevel) {
-      setFilters(prevFilters => ({
-        ...prevFilters,
-        educationLevel
-      }));
-    }
+    setFilters({ ...filters, educationLevel: educationLevel || 'All' });
+    // eslint-disable-next-line
   }, [educationLevel]);
 
   useEffect(() => {
     async function fetchAllJobs() {
       setLoading(true);
       try {
-        // Fetch from Supabase
         await fetchSupabaseJobs();
       } catch (error) {
         console.error("Failed to fetch jobs:", error);
@@ -53,51 +33,36 @@ export function FindJobsPage() {
       }
     }
     fetchAllJobs();
-  }, [educationLevel]);
-
+  }, [filters.educationLevel]);
 
   async function fetchSupabaseJobs() {
     try {
-      // Start building the query
       let query = supabase
         .from('jobs')
         .select('*');
-      
+
       // Apply search query filter if provided
-      if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+      if (filters.searchQuery) {
+        query = query.or(`title.ilike.%${filters.searchQuery}%,description.ilike.%${filters.searchQuery}%`);
       }
-      
-      // Apply location filter if provided
-      if (location) {
-        query = query.ilike('location', `%${location}%`);
+      if (filters.location) {
+        query = query.ilike('location', `%${filters.location}%`);
       }
-      
-      // Apply job type filter if not 'All'
       if (filters.type && filters.type !== 'All') {
         query = query.eq('type', filters.type);
       }
-      
-      // Apply experience level filter if not 'All'
       if (filters.level && filters.level !== 'All') {
         query = query.eq('level', filters.level);
       }
-      
-      // Apply education level filter if provided and not 'All'
       if (filters.educationLevel && filters.educationLevel !== 'All') {
         query = query.eq('education_level', filters.educationLevel);
       }
-      
-      // Apply time commitment filter if provided and not 'All'
       if (filters.timeCommitment && filters.timeCommitment !== 'All') {
         query = query.eq('time_commitment', filters.timeCommitment);
       }
-      
-      // Apply date posted filter
       if (filters.datePosted && filters.datePosted !== 'Any time') {
         const now = new Date();
         let dateFilter = now;
-        
         if (filters.datePosted === 'Past 24 hours') {
           dateFilter = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         } else if (filters.datePosted === 'Past week') {
@@ -105,28 +70,19 @@ export function FindJobsPage() {
         } else if (filters.datePosted === 'Past month') {
           dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         }
-        
         query = query.gte('posted_at', dateFilter.toISOString());
       }
-      
-      // Execute the query with ordering
       const { data, error } = await query.order('posted_at', { ascending: false });
-
       if (error) throw error;
-      
       const jobsWithDates = data.map(job => ({
         ...job,
         postedAt: new Date(job.posted_at),
-        timeCommitment: job.time_commitment, // Map from snake_case to camelCase
-        educationLevel: job.manual_education_level || job.education_level, // Prioritize manual_education_level
-        source: job.source || 'supabase' // Add source identifier with fallback
+        timeCommitment: job.time_commitment,
+        educationLevel: job.manual_education_level || job.education_level,
+        source: job.source || 'supabase'
       }));
-      
       setSupabaseJobs(jobsWithDates);
-      
-      // Update allJobs with both sources
       setAllJobs(jobsWithDates);
-      
       console.log(`Fetched ${jobsWithDates.length} jobs with applied filters`);
     } catch (error) {
       console.error("Failed to fetch jobs from Supabase:", error);
@@ -136,78 +92,40 @@ export function FindJobsPage() {
   // Memoized filtering logic
   const filteredJobs = useMemo(() => {
     console.log(`Filtering ${allJobs.length} jobs with filters:`, filters);
-    
     return allJobs.filter(job => {
-      const queryLower = searchQuery.toLowerCase();
-      const locationLower = location.toLowerCase();
-
-      // Search query filter (title or description)
+      const queryLower = filters.searchQuery.toLowerCase();
+      const locationLower = filters.location.toLowerCase();
       const matchesSearch = !queryLower ||
         job.title.toLowerCase().includes(queryLower) ||
         job.description.toLowerCase().includes(queryLower);
-
-      // Location filter
       const matchesLocation = !locationLower ||
         job.location.toLowerCase().includes(locationLower);
-
-      // Type filter - Only apply if not 'All'
       const matchesType = filters.type === 'All' || job.type === filters.type;
-
-      // Level filter - Only apply if not 'All'
       const matchesLevel = filters.level === 'All' || job.level === filters.level;
-      
-      // Education Level filter - Only apply if not 'All'
       const matchesEducationLevel = !filters.educationLevel || 
         filters.educationLevel === 'All' || 
         (job.educationLevel && job.educationLevel === filters.educationLevel);
-      
-      // Time Commitment filter - Only apply if not 'All'
       const matchesTimeCommitment = !filters.timeCommitment || 
         filters.timeCommitment === 'All' || 
         (job.timeCommitment && job.timeCommitment === filters.timeCommitment);
-
-      // Date Posted filter
       const matchesDate = filters.datePosted === 'Any time' || (() => {
         const now = new Date();
-        const jobDate = job.postedAt; // Already a Date object
-        if (!jobDate) return true; // Skip if no date
-        
+        const jobDate = job.postedAt;
+        if (!jobDate) return true;
         const diffTime = Math.abs(now.getTime() - jobDate.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
         if (filters.datePosted === 'Past 24 hours') return diffDays <= 1;
         if (filters.datePosted === 'Past week') return diffDays <= 7;
         if (filters.datePosted === 'Past month') return diffDays <= 30;
-        return true; // Default case if filter value is unexpected
+        return true;
       })();
-
-      // Debug individual job filtering
-      if (matchesSearch && matchesLocation && !matchesType) {
-        console.log(`Job ${job.title} filtered out by type: ${job.type} vs ${filters.type}`);
-      }
-      if (matchesSearch && matchesLocation && !matchesLevel) {
-        console.log(`Job ${job.title} filtered out by level: ${job.level} vs ${filters.level}`);
-      }
-      if (matchesSearch && matchesLocation && !matchesEducationLevel) {
-        console.log(`Job ${job.title} filtered out by education level: ${job.educationLevel} vs ${filters.educationLevel}`);
-      }
-      if (matchesSearch && matchesLocation && !matchesTimeCommitment) {
-        console.log(`Job ${job.title} filtered out by time commitment: ${job.timeCommitment} vs ${filters.timeCommitment}`);
-      }
-
-      const matches = matchesSearch && matchesLocation && matchesType && 
+      return matchesSearch && matchesLocation && matchesType && 
              matchesLevel && matchesEducationLevel && matchesTimeCommitment && matchesDate;
-             
-      return matches;
     });
-  }, [allJobs, searchQuery, location, filters]);
-
+  }, [allJobs, filters]);
 
   const handleSearch = (query: string, loc: string) => {
-    setSearchQuery(query);
-    setLocation(loc);
-    
-    // Refetch from both sources with new search parameters
+    setFilters({ ...filters, searchQuery: query, location: loc });
     fetchSupabaseJobs();
   };
 
@@ -218,9 +136,7 @@ export function FindJobsPage() {
     timeCommitment?: string;
     datePosted: string 
   }) => {
-    setFilters(newFilters); // Update filters state
-    
-    // Refetch from both sources with new filters
+    setFilters({ ...filters, ...newFilters });
     fetchSupabaseJobs();
   };
 

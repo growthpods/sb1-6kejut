@@ -74,7 +74,8 @@ async function fetchInternshipsFromRapidAPI() {
       method: 'GET',
       url: `https://${rapidApiHost}/active-jb-7d`,
       params: {
-        location_filter: 'Texas'
+        location_filter: 'Texas',
+        description_type: 'text'
       },
       headers: {
         'x-rapidapi-key': rapidApiKey,
