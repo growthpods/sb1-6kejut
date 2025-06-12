@@ -1,146 +1,80 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { SearchBar } from '../components/SearchBar';
 import { JobCard } from '../components/JobCard';
-import { JobFilters } from '../components/job/JobFilters';
 import { supabase } from '../lib/supabase';
 import type { Job } from '../types';
 import { useEducationLevel } from '../contexts/EducationLevelContext';
-import { useJobFilters } from '../contexts/JobFilterContext';
 
 export function FindJobsPage() {
   const { educationLevel, clearEducationLevel } = useEducationLevel();
-  const { filters, setFilters, updateFilter } = useJobFilters();
-  const [allJobs, setAllJobs] = useState<Job[]>([]); // Holds all fetched jobs
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
-  const [supabaseJobs, setSupabaseJobs] = useState<Job[]>([]); // Holds jobs from Supabase
-  
-  // Update filters when educationLevel changes
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+  const jobsPerPage = 20;
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Fetch jobs in batches for infinite scroll
   useEffect(() => {
-    setFilters({ ...filters, educationLevel: educationLevel || 'All' });
+    setJobs([]);
+    setPage(0);
+    setHasMore(true);
+    setLoading(true);
+    fetchJobs(0, true);
     // eslint-disable-next-line
   }, [educationLevel]);
 
-  useEffect(() => {
-    async function fetchAllJobs() {
-      setLoading(true);
-      try {
-        await fetchSupabaseJobs();
-      } catch (error) {
-        console.error("Failed to fetch jobs:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchAllJobs();
-  }, [filters.educationLevel]);
-
-  async function fetchSupabaseJobs() {
+  async function fetchJobs(pageNum: number, replace = false) {
     try {
-      let query = supabase
+      const query = supabase
         .from('jobs')
-        .select('*');
-
-      // Apply search query filter if provided
-      if (filters.searchQuery) {
-        query = query.or(`title.ilike.%${filters.searchQuery}%,description.ilike.%${filters.searchQuery}%`);
+        .select('*')
+        .order('posted_at', { ascending: false })
+        .range(pageNum * jobsPerPage, (pageNum + 1) * jobsPerPage - 1);
+      if (educationLevel) {
+        query.eq('education_level', educationLevel);
       }
-      if (filters.location) {
-        query = query.ilike('location', `%${filters.location}%`);
-      }
-      if (filters.type && filters.type !== 'All') {
-        query = query.eq('type', filters.type);
-      }
-      if (filters.level && filters.level !== 'All') {
-        query = query.eq('level', filters.level);
-      }
-      if (filters.educationLevel && filters.educationLevel !== 'All') {
-        query = query.eq('education_level', filters.educationLevel);
-      }
-      if (filters.timeCommitment && filters.timeCommitment !== 'All') {
-        query = query.eq('time_commitment', filters.timeCommitment);
-      }
-      if (filters.datePosted && filters.datePosted !== 'Any time') {
-        const now = new Date();
-        let dateFilter = now;
-        if (filters.datePosted === 'Past 24 hours') {
-          dateFilter = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        } else if (filters.datePosted === 'Past week') {
-          dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        } else if (filters.datePosted === 'Past month') {
-          dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        }
-        query = query.gte('posted_at', dateFilter.toISOString());
-      }
-      const { data, error } = await query.order('posted_at', { ascending: false });
+      const { data, error } = await query;
       if (error) throw error;
       const jobsWithDates = data.map(job => ({
         ...job,
-        postedAt: new Date(job.posted_at),
+        postedAt: new Date(job.posted_at || job.postedAt),
         timeCommitment: job.time_commitment,
-        educationLevel: job.manual_education_level || job.education_level,
-        source: job.source || 'supabase'
+        educationLevel: job.education_level,
       }));
-      setSupabaseJobs(jobsWithDates);
-      setAllJobs(jobsWithDates);
-      console.log(`Fetched ${jobsWithDates.length} jobs with applied filters`);
+      if (replace) {
+        setJobs(jobsWithDates);
+      } else {
+        setJobs(prev => [...prev, ...jobsWithDates]);
+      }
+      setHasMore(jobsWithDates.length === jobsPerPage);
     } catch (error) {
-      console.error("Failed to fetch jobs from Supabase:", error);
+      console.error('Failed to fetch jobs:', error);
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
     }
   }
 
-  // Memoized filtering logic
-  const filteredJobs = useMemo(() => {
-    console.log(`Filtering ${allJobs.length} jobs with filters:`, filters);
-    return allJobs.filter(job => {
-      const queryLower = filters.searchQuery.toLowerCase();
-      const locationLower = filters.location.toLowerCase();
-      const matchesSearch = !queryLower ||
-        job.title.toLowerCase().includes(queryLower) ||
-        job.description.toLowerCase().includes(queryLower);
-      const matchesLocation = !locationLower ||
-        job.location.toLowerCase().includes(locationLower);
-      const matchesType = filters.type === 'All' || job.type === filters.type;
-      const matchesLevel = filters.level === 'All' || job.level === filters.level;
-      const matchesEducationLevel = !filters.educationLevel || 
-        filters.educationLevel === 'All' || 
-        (job.educationLevel && job.educationLevel === filters.educationLevel);
-      const matchesTimeCommitment = !filters.timeCommitment || 
-        filters.timeCommitment === 'All' || 
-        (job.timeCommitment && job.timeCommitment === filters.timeCommitment);
-      const matchesDate = filters.datePosted === 'Any time' || (() => {
-        const now = new Date();
-        const jobDate = job.postedAt;
-        if (!jobDate) return true;
-        const diffTime = Math.abs(now.getTime() - jobDate.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        if (filters.datePosted === 'Past 24 hours') return diffDays <= 1;
-        if (filters.datePosted === 'Past week') return diffDays <= 7;
-        if (filters.datePosted === 'Past month') return diffDays <= 30;
-        return true;
-      })();
-      return matchesSearch && matchesLocation && matchesType && 
-             matchesLevel && matchesEducationLevel && matchesTimeCommitment && matchesDate;
-    });
-  }, [allJobs, filters]);
+  // Infinite scroll handler
+  useEffect(() => {
+    function handleScroll() {
+      if (!listRef.current || loadingMore || !hasMore) return;
+      const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+      if (scrollTop + clientHeight >= scrollHeight - 200) {
+        setLoadingMore(true);
+        fetchJobs(page + 1);
+        setPage(prev => prev + 1);
+      }
+    }
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [page, loadingMore, hasMore]);
 
-  const handleSearch = (query: string, loc: string) => {
-    setFilters({ ...filters, searchQuery: query, location: loc });
-    fetchSupabaseJobs();
-  };
-
-  const handleFilterChange = (newFilters: { 
-    type: string; 
-    level: string; 
-    educationLevel?: string;
-    timeCommitment?: string;
-    datePosted: string 
-  }) => {
-    setFilters({ ...filters, ...newFilters });
-    fetchSupabaseJobs();
-  };
-
-  if (loading) {
+  if (loading && jobs.length === 0) {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="flex items-center justify-center">
@@ -174,58 +108,47 @@ export function FindJobsPage() {
                 : 'Browse through flexible jobs for evenings, weekends, or summer breaks'}
           </p>
           <div className="max-w-4xl mx-auto">
-            <SearchBar onSearch={handleSearch} />
+            <SearchBar onSearch={() => {}} />
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 md:py-12">
-        <div className="lg:flex gap-8">
-          <div className="mb-6 lg:mb-0 lg:w-64 lg:flex-shrink-0">
-            <JobFilters onFilterChange={handleFilterChange} />
+      <div className="container mx-auto px-4 py-8 md:py-12" ref={listRef}>
+        <div className="flex-1">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4 sm:gap-0">
+            <h2 className="text-xl md:text-2xl font-semibold">
+              {educationLevel 
+                ? `${educationLevel} Internships` 
+                : 'Available Positions'}
+              <span className="text-gray-500 text-base md:text-lg ml-2">
+                ({jobs.length})
+              </span>
+              {educationLevel && (
+                <button 
+                  onClick={() => clearEducationLevel()} 
+                  className="ml-4 text-sm text-blue-500 hover:underline"
+                >
+                  Clear Filter
+                </button>
+              )}
+            </h2>
           </div>
-
-          <div className="flex-1">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4 sm:gap-0">
-              <h2 className="text-xl md:text-2xl font-semibold">
-                {educationLevel 
-                  ? `${educationLevel} Internships` 
-                  : 'Available Positions'}
-                <span className="text-gray-500 text-base md:text-lg ml-2">
-                  ({filteredJobs.length})
-                </span>
-                {educationLevel && (
-                  <button 
-                    onClick={() => clearEducationLevel()} 
-                    className="ml-4 text-sm text-blue-500 hover:underline"
-                  >
-                    (Clear Filter)
-                  </button>
-                )}
-              </h2>
-              <select className="w-full sm:w-auto px-3 py-2 md:px-4 md:py-2 border rounded-lg bg-white">
-                <option>Most recent</option>
-                <option>Most relevant</option>
-              </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {jobs.map((job) => (
+              <Link key={job.id} to={`/find-jobs/${job.id}`} className="block h-full">
+                <JobCard job={job} />
+              </Link>
+            ))}
+          </div>
+          {loadingMore && (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <span className="ml-2">Loading more jobs...</span>
             </div>
-
-            {filteredJobs.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                  {filteredJobs.map((job) => (
-                    <Link key={job.id} to={`/find-jobs/${job.id}`} className="block h-full">
-                      <JobCard job={job} />
-                    </Link>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-12 bg-white rounded-lg shadow-sm p-8">
-                <p className="text-gray-500 text-lg">No jobs found matching your criteria</p>
-                <p className="text-gray-400 mt-2">Try adjusting your filters or search terms</p>
-              </div>
-            )}
-          </div>
+          )}
+          {!hasMore && jobs.length > 0 && (
+            <div className="text-center text-gray-400 py-8">No more jobs to load.</div>
+          )}
         </div>
       </div>
     </div>

@@ -75,7 +75,7 @@ export function HomePage() {
       }
     }
     fetchRecentJobs();
-  }, []);
+  }, [educationLevel]);
 
   // Memoized filtering logic
   const filteredJobs = useMemo(() => {
