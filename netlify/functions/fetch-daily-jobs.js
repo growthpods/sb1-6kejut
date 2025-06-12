@@ -65,7 +65,7 @@ async function fetchPage(offset) {
       method: 'GET',
       url: `https://${rapidApiHost}/active-jb-7d`,
       params: {
-        location_filter: 'Texas',
+        location_filter: 'United States',
         description_type: 'text',
         offset: offset
       },
@@ -284,7 +284,7 @@ export async function handler() {
   const fetchPromises = [];
   for (let i = 0; i < pageCount; i++) {
     const params = {
-      location_filter: 'Texas',
+      location_filter: 'United States',
       description_type: 'text',
       offset: i * 10
     };
