@@ -114,7 +114,10 @@ export function AboutPage() {
             <h2 className="text-3xl font-bold text-center mb-8">Our Story</h2>
             <div className="bg-white p-8 rounded-xl shadow-sm">
               <p className="text-gray-700 mb-4">
-                InternJobs.ai was founded in 2024 with a simple idea: make it easier for high school students to find flexible work opportunities that fit around their school schedules.
+                InternJobs.ai was founded in 2025 with a simple idea: make it easier for high school students to find flexible work opportunities that fit around their school schedules.
+              </p>
+              <p className="text-gray-700 mb-4">
+                The inspiration for InternJobs.ai came from interviews conducted as part of an FBLA (Future Business Leaders of America) project. During these interviews, high school and college students shared how difficult it was to find flexible jobs—especially those that fit around classes, extracurriculars, and summer breaks. Their stories highlighted a real need for a platform dedicated to connecting students with the right opportunities.
               </p>
               <p className="text-gray-700 mb-4">
                 We noticed that while there were plenty of job boards for college students and professionals, high school students were often overlooked. Yet these young people are eager to gain experience, develop skills, and earn money during evenings, weekends, and summer breaks.
