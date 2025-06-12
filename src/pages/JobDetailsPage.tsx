@@ -45,8 +45,9 @@ export function JobDetailsPage() {
              timeCommitment: data.time_commitment,
              applicants: data.applicants,
              postedAt: new Date(data.posted_at),
-             externalLink: data.external_link,
-             applicationUrl: data.application_url,
+             // Map both snake_case and camelCase for links
+             applicationUrl: data.application_url || data.external_link || '',
+             externalLink: data.external_link || data.application_url || '',
              companyLogo: data.company_logo,
              source: data.source,
              // careerSiteUrl needs to be added to Job type. For now, handle if present.
