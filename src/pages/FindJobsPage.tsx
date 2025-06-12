@@ -43,6 +43,9 @@ export function FindJobsPage() {
         postedAt: new Date(job.posted_at || job.postedAt),
         timeCommitment: job.time_commitment,
         educationLevel: job.education_level,
+        applicationUrl: job.application_url,
+        externalLink: job.external_link,
+        location: job.location_derived || job.location,
       }));
       if (replace) {
         setJobs(jobsWithDates);
