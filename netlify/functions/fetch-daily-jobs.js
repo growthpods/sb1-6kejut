@@ -88,7 +88,21 @@ async function fetchPage(offset) {
   }
 }
 
+// Seniority/title filter to exclude non-internship roles
+function shouldExcludeAsInternship(job) {
+  const title = (job.title || '').toLowerCase();
+  const seniorityKeywords = [
+    'lead', 'manager', 'director', 'senior', 'principal', 'architect', 'vp', 'vice president', 'president', 'chief', 'head', 'supervisor', 'executive', 'officer', 'consultant', 'specialist', 'administrator', 'engineer iii', 'engineer iv', 'engineer v', 'sr.', 'sr ', 'staff', 'expert', 'advisor', 'strategist', 'owner', 'founder', 'co-founder', 'partner', 'owner', 'proprietor', 'professor', 'faculty', 'postdoc', 'postdoctoral', 'attorney', 'lawyer', 'counsel', 'council', 'judge', 'doctor', 'physician', 'surgeon', 'dentist', 'nurse practitioner', 'nurse manager', 'nurse director', 'nurse supervisor', 'nurse educator', 'nurse administrator', 'nurse executive', 'nurse chief', 'nurse officer', 'nurse consultant', 'nurse specialist', 'nurse advisor', 'nurse strategist', 'nurse owner', 'nurse founder', 'nurse co-founder', 'nurse partner', 'nurse proprietor', 'nurse professor', 'nurse faculty', 'nurse postdoc', 'nurse postdoctoral', 'nurse attorney', 'nurse lawyer', 'nurse counsel', 'nurse council', 'nurse judge', 'nurse doctor', 'nurse physician', 'nurse surgeon', 'nurse dentist', 'nurse nurse practitioner', 'nurse nurse manager', 'nurse nurse director', 'nurse nurse supervisor', 'nurse nurse educator', 'nurse nurse administrator', 'nurse nurse executive', 'nurse nurse chief', 'nurse nurse officer', 'nurse nurse consultant', 'nurse nurse specialist', 'nurse nurse advisor', 'nurse nurse strategist', 'nurse nurse owner', 'nurse nurse founder', 'nurse nurse co-founder', 'nurse nurse partner', 'nurse nurse proprietor', 'nurse nurse professor', 'nurse nurse faculty', 'nurse nurse postdoc', 'nurse nurse postdoctoral', 'nurse nurse attorney', 'nurse nurse lawyer', 'nurse nurse counsel', 'nurse nurse council', 'nurse nurse judge', 'nurse nurse doctor', 'nurse nurse physician', 'nurse nurse surgeon', 'nurse nurse dentist'
+  ];
+  // Exclude if any seniority keyword is present and 'intern' is not in the title
+  return seniorityKeywords.some(k => title.includes(k)) && !title.includes('intern');
+}
+
 function rulePreTag(job) {
+  // Exclude senior roles from being tagged as internships
+  if (shouldExcludeAsInternship(job)) {
+    return { ...job, pretagged: false, education_level: undefined };
+  }
   // Improved rule-based tagging for high school and college jobs
   const title = job.title?.toLowerCase() || '';
   const description = job.description?.toLowerCase() || '';
@@ -308,8 +322,11 @@ export async function handler() {
   const allJobsRaw = allPages.flat();
   console.log(`Fetched total ${allJobsRaw.length} jobs from RapidAPI.`);
 
+  // Filter out jobs that should not be classified as internships
+  const filteredJobsRaw = allJobsRaw.filter(j => !shouldExcludeAsInternship(j));
+
   // Map to job schema and rule pre-tag
-  const jobsMapped = allJobsRaw.map(j => rulePreTag(mapToJobSchema(j, null, null)));
+  const jobsMapped = filteredJobsRaw.map(j => rulePreTag(mapToJobSchema(j, null, null)));
 
   // Batch LLM tagging for jobs not pretagged
   const pretagged = jobsMapped.filter(j => j.pretagged);

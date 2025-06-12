@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { SearchBar } from '../components/SearchBar';
 import { JobCard } from '../components/JobCard';
 import { supabase } from '../lib/supabase';
@@ -15,6 +15,12 @@ export function FindJobsPage() {
   const [page, setPage] = useState(0);
   const jobsPerPage = 20;
   const listRef = useRef<HTMLDivElement>(null);
+  const [searchParams] = useSearchParams();
+
+  // Parse filters from URL
+  const searchQuery = searchParams.get('search') || '';
+  const locationQuery = searchParams.get('location') || '';
+  // Optionally, parse more filters from URL if you add them
 
   // Fetch jobs in batches for infinite scroll
   useEffect(() => {
@@ -24,18 +30,28 @@ export function FindJobsPage() {
     setLoading(true);
     fetchJobs(0, true);
     // eslint-disable-next-line
-  }, [educationLevel]);
+  }, [educationLevel, searchQuery, locationQuery]);
 
   async function fetchJobs(pageNum: number, replace = false) {
     try {
-      const query = supabase
+      let query = supabase
         .from('jobs')
         .select('*')
         .order('posted_at', { ascending: false })
         .range(pageNum * jobsPerPage, (pageNum + 1) * jobsPerPage - 1);
+      // Apply education level filter if selected
       if (educationLevel) {
-        query.eq('education_level', educationLevel);
+        query = query.eq('education_level', educationLevel);
       }
+      // Apply search query filter (title, company, description)
+      if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+      }
+      // Apply location filter
+      if (locationQuery && locationQuery.toLowerCase() !== 'united states') {
+        query = query.ilike('location', `%${locationQuery}%`);
+      }
+      // TODO: Add more filters here if needed (type, level, time commitment, etc.)
       const { data, error } = await query;
       if (error) throw error;
       const jobsWithDates = data.map(job => ({
