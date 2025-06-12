@@ -168,21 +168,27 @@ function hashStringToHex(str) {
 
 // Utility: whitelist only schema columns for jobs table
 function stripUnknownJobKeys(job) {
-  // List only the columns that exist in your jobs table
+  // List only the columns that exist in your jobs table and are needed for the frontend
   const allowed = [
-    'id', 'title', 'company', 'company_url', 'location', 'description', 'url', 'date_posted',
-    'education_level', 'time_commitment', 'created_at', 'updated_at', 'manual_education_level',
-    'organization_logo', 'salary', 'source', 'source_domain', 'seniority', 'directapply',
-    'regions_derived', 'cities_derived', 'countries_derived', 'remote_derived', 'recruiter_name',
-    'recruiter_title', 'recruiter_url', 'linkedin_org_employees', 'linkedin_org_url', 'linkedin_org_size',
-    'linkedin_org_slogan', 'linkedin_org_industry', 'linkedin_org_followers', 'linkedin_org_headquarters',
-    'linkedin_org_type', 'linkedin_org_foundeddate', 'linkedin_org_specialties', 'linkedin_org_locations',
-    'linkedin_org_description', 'linkedin_org_recruitment_agency_derived', 'date_validthrough',
-    'salary_raw', 'employment_type', 'organization', 'organization_url', 'organization_logo',
-    'locations_derived', 'timezones_derived', 'lats_derived', 'lngs_derived', 'locations_raw',
-    'location_type', 'location_requirements_raw', 'salary_raw', 'url', 'source_type', 'description_text',
-    'manual_education_level', 'manual_time_commitment', 'created_by', 'updated_by', 'deleted_at',
-    'type', 'level', 'employer_id' // <-- ensure employer_id is included
+    'id',
+    'title',
+    'company',
+    'location',
+    'description',
+    'requirements',
+    'type',
+    'level',
+    'education_level',
+    'time_commitment',
+    'applicants',
+    'posted_at',
+    'external_link',
+    'application_url',
+    'company_logo',
+    'employer_id',
+    'source',
+    'career_site_url',
+    // keep any other fields you use for analytics/debugging if needed
   ];
   const clean = {};
   for (const k of allowed) {
@@ -217,14 +223,19 @@ async function upsertJobsBatched(jobs, batchSize = 50) {
 
 function mapToJobSchema(internship, educationLevel, timeCommitment) {
   console.log('DEBUG internship object:', internship); // Debug log
-  let location = 'Houston, TX, USA'; 
+  let location = null;
   if (internship.locations_derived && internship.locations_derived.length > 0) {
-    const specificLocation = internship.locations_derived[0];
-    if (specificLocation.toLowerCase().includes('houston')) {
-      location = specificLocation;
-    }
-  } else if (internship.location && internship.location.toLowerCase().includes('houston')) {
-     location = internship.location;
+    location = internship.locations_derived[0];
+  } else if (internship.location) {
+    location = internship.location;
+  } else if (
+    internship.cities_derived && internship.cities_derived.length > 0 &&
+    internship.regions_derived && internship.regions_derived.length > 0 &&
+    internship.countries_derived && internship.countries_derived.length > 0
+  ) {
+    location = `${internship.cities_derived[0]}, ${internship.regions_derived[0]}, ${internship.countries_derived[0]}`;
+  } else {
+    location = 'United States';
   }
 
   return {
