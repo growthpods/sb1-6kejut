@@ -21,9 +21,9 @@
     "scrape:houston": "tsc -p tsconfig.scripts.json && node dist/scripts/scrapeHoustonInternships.js"
   },
   "dependencies": {
-    "@copilotkit/react-core": "^1.8.12",
-    "@copilotkit/react-ui": "^1.8.12",
-    "@copilotkit/runtime": "^1.8.12",
+    "@copilotkit/react-core": "^1.8.14",
+    "@copilotkit/react-ui": "^1.8.14",
+    "@copilotkit/runtime": "^1.8.14",
     "@google/genai": "^0.9.0",
     "@google/generative-ai": "^0.24.1",
     "@netlify/functions": "^2.8.1",
