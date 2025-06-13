@@ -7,6 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 import { getEducationLevelParser } from '../../src/lib/educationLevelParser.js';
 import { getTimeCommitmentParser } from '../../src/lib/timeCommitmentParser.js';
 import pLimit from 'p-limit';
+import { v4 as uuidv4 } from 'uuid';
 
 // Initialize dotenv to load environment variables (primarily for local testing if any)
 // Netlify build process should make these available in the function's environment
@@ -89,27 +90,33 @@ async function fetchPage(offset) {
 }
 
 async function fetchCareerSiteJobs() {
-  try {
-    const options = {
-      method: 'GET',
-      url: 'https://internships-api.p.rapidapi.com/active-ats-7d',
-      headers: {
-        'x-rapidapi-key': rapidApiKey,
-        'x-rapidapi-host': 'internships-api.p.rapidapi.com',
-      },
-    };
-    const response = await axios.request(options);
-    if (response.data && Array.isArray(response.data)) {
-      console.log(`Fetched ${response.data.length} jobs from Career Site API`);
-      return response.data;
-    } else {
-      console.log('No jobs found or unexpected response from Career Site API');
-      return [];
+  let allCareerJobs = [];
+  for (let batch = 0; batch < 50; batch++) {
+    try {
+      const options = {
+        method: 'GET',
+        url: 'https://internships-api.p.rapidapi.com/active-ats-7d',
+        params: { offset: batch * 100 }, // If the API supports offset/pagination
+        headers: {
+          'x-rapidapi-key': rapidApiKey,
+          'x-rapidapi-host': 'internships-api.p.rapidapi.com',
+        },
+      };
+      const response = await axios.request(options);
+      if (response.data && Array.isArray(response.data)) {
+        console.log(`Fetched ${response.data.length} jobs from Career Site API (batch ${batch})`);
+        allCareerJobs = allCareerJobs.concat(response.data);
+        if (response.data.length < 100) break; // No more jobs
+      } else {
+        console.log(`No jobs found or unexpected response from Career Site API (batch ${batch})`);
+        break;
+      }
+    } catch (error) {
+      console.error(`Error fetching jobs from Career Site API (batch ${batch}):`, error.response ? error.response.data : error.message);
+      break;
     }
-  } catch (error) {
-    console.error('Error fetching jobs from Career Site API:', error.response ? error.response.data : error.message);
-    return [];
   }
+  return allCareerJobs;
 }
 
 // Seniority/title filter to exclude non-internship roles
@@ -321,6 +328,16 @@ function getYesterdayISOString() {
   return now.toISOString().split('.')[0]; // Remove milliseconds for API
 }
 
+function ensureValidJobId(job) {
+  // If job.id is not a valid UUID, generate one from a hash of title+company+location
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!job.id || !uuidRegex.test(job.id)) {
+    // Use a deterministic hash or uuidv4
+    job.id = uuidv4();
+  }
+  return job;
+}
+
 // Main handler
 export async function handler() {
   const isInitialImport = process.env.INITIAL_IMPORT === 'true';
@@ -367,8 +384,9 @@ export async function handler() {
   const careerSiteJobs = await fetchCareerSiteJobs();
   const allJobs = uniqueJobs.concat(careerSiteJobs);
 
-  // Upsert in batches
-  const { success, error, failures: upsertFailures } = await upsertJobsBatched(allJobs);
+  // Before upserting, ensure all jobs have valid UUIDs
+  const jobsToUpsert = allJobs.map(ensureValidJobId);
+  const { success, error, failures: upsertFailures } = await upsertJobsBatched(jobsToUpsert);
   console.log(`Upserted jobs: ${success}, Errors: ${error}`);
 
   // Simulate dead-letter queue (log failures)
