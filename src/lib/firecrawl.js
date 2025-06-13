@@ -74,73 +74,66 @@ export class FirecrawlService {
      * @returns Parsed job data
      */
     parseJobContent(content, url) {
-        // Basic parsing logic - in a real implementation, this would be more robust
-        // or would use the LLM to extract structured data
+        // Robust parsing for unstructured internship/program pages
         const lines = content.split('\n').filter(line => line.trim() !== '');
-        // Extract title from first heading
-        const titleMatch = content.match(/# (.*?)(?:\n|$)/);
-        const title = titleMatch ? titleMatch[1].trim() : undefined;
-        // Try to extract company name (often near the top, after title)
-        let company;
-        for (let i = 0; i < Math.min(5, lines.length); i++) {
-            // Look for company patterns like "at Company" or just "Company"
-            const companyMatch = lines[i].match(/(?:at|by|from) ([A-Z][A-Za-z0-9\s&.,]+)/) ||
-                lines[i].match(/^([A-Z][A-Za-z0-9\s&.,]+)$/);
-            if (companyMatch && !lines[i].includes('#')) {
-                company = companyMatch[1].trim();
-                break;
+        let title, company, location, description = '', requirements = [], type, level, applicationUrl;
+        // 1. Extract all headings and their content
+        const headingRegex = /^(#+)\s*(.+)$/gm;
+        let match, headings = [];
+        while ((match = headingRegex.exec(content)) !== null) {
+            headings.push({ level: match[1].length, text: match[2], index: match.index });
+        }
+        // 2. Extract content under each heading
+        let sections = {};
+        for (let i = 0; i < headings.length; i++) {
+            const start = headings[i].index + headings[i].level + 1 + headings[i].text.length;
+            const end = i + 1 < headings.length ? headings[i + 1].index : content.length;
+            const sectionText = content.slice(start, end).trim();
+            sections[headings[i].text.toLowerCase()] = sectionText;
+        }
+        // 3. Try to extract title from first heading or page title
+        title = headings.length > 0 ? headings[0].text : undefined;
+        // 4. Try to extract company from content or known patterns
+        company = (content.match(/(?:Company|Organization|Employer):\s*([A-Za-z0-9 &.,'-]+)/i) || [])[1];
+        if (!company) {
+            // Fallback: use domain name or known orgs in the text
+            const domainMatch = url.match(/https?:\/\/(?:www\.)?([a-zA-Z0-9-]+)\./);
+            company = domainMatch ? domainMatch[1].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : undefined;
+        }
+        // 5. Try to extract location from 'Location' section or address patterns
+        location = (sections['location'] && sections['location'].split('\n')[0]) ||
+            (content.match(/\b([A-Za-z .]+,\s*[A-Z]{2,}(?:,?\s*USA|United States)?)\b/) || [])[1];
+        // 6. Extract requirements from 'Eligibility', 'Requirements', or 'Qualifications' sections
+        const reqSection = sections['eligibility'] || sections['requirements'] || sections['qualifications'];
+        if (reqSection) {
+            requirements = reqSection.split('\n').filter(line => line.trim().match(/^[-*•]/)).map(line => line.replace(/^[-*•]\s*/, '').trim());
+            // Also try to extract bullet points even if not marked
+            if (requirements.length === 0) {
+                requirements = reqSection.split('\n').filter(line => line.trim().length > 0);
             }
         }
-        // Try to extract location (often contains city, state format)
-        let location;
-        for (let i = 0; i < Math.min(10, lines.length); i++) {
-            // Look for location patterns like "Location: City, State" or "City, State"
-            const locationMatch = lines[i].match(/Location:?\s*([^,]+,\s*[A-Z]{2})/) ||
-                lines[i].match(/([A-Za-z\s]+,\s*[A-Z]{2})/);
-            if (locationMatch) {
-                location = locationMatch[1].trim();
-                break;
-            }
+        // 7. Extract application URL from 'Application', 'Apply', or 'How to Apply' sections
+        const appSection = sections['application'] || sections['apply'] || sections['how to apply'];
+        if (appSection) {
+            const urlMatch = appSection.match(/https?:\/\/[^\s)"']+/);
+            if (urlMatch) applicationUrl = urlMatch[0];
         }
-        // Extract requirements (look for bullet points after "Requirements" section)
-        const requirementsMatch = content.match(/(?:Requirements|Qualifications):(.*?)(?:##|$)/s);
-        let requirements = [];
-        if (requirementsMatch) {
-            const reqSection = requirementsMatch[1];
-            requirements = reqSection
-                .split('\n')
-                .filter(line => line.trim().startsWith('*') || line.trim().startsWith('-'))
-                .map(line => line.replace(/^[*-]\s*/, '').trim());
+        if (!applicationUrl) {
+            // Fallback: any link near 'apply' or 'application' in the content
+            const applyMatch = content.match(/(?:Apply|Application).*?(https?:\/\/[^\s)"']+)/i);
+            if (applyMatch) applicationUrl = applyMatch[1];
         }
-        // Extract job type (full-time, part-time, etc.)
-        let type;
-        const typeMatch = content.match(/(?:Job Type|Employment Type|Type):\s*([A-Za-z\s-]+)/i);
-        if (typeMatch) {
-            type = typeMatch[1].trim();
+        // 8. Aggregate description from all relevant sections
+        const descSections = ['about', 'overview', 'description', 'program', 'summary', 'internship guidelines & requirements'];
+        for (const key of descSections) {
+            if (sections[key]) description += sections[key] + '\n';
         }
-        // Extract job level
-        let level;
-        const levelMatch = content.match(/(?:Experience|Level):\s*([A-Za-z\s]+)/i);
-        if (levelMatch) {
-            level = levelMatch[1].trim();
-        }
-        // Extract application URL if present
-        let applicationUrl;
-        const applyMatch = content.match(/(?:Apply|Application).*?(https?:\/\/[^\s"]+)/i);
-        if (applyMatch) {
-            applicationUrl = applyMatch[1].trim();
-        }
-        // Use everything else as description
-        let description = content;
-        // Remove title if found
-        if (titleMatch) {
-            description = description.replace(titleMatch[0], '');
-        }
-        // Remove requirements section if found
-        if (requirementsMatch) {
-            description = description.replace(requirementsMatch[0], '');
-        }
-        // Clean up the description
+        // Fallback: use the first 20 lines as description if still empty
+        if (!description) description = lines.slice(0, 20).join(' ');
+        // 9. Extract type and level from content or fallback
+        type = (content.match(/(?:Job Type|Employment Type|Type):\s*([A-Za-z\s-]+)/i) || [])[1] || 'Internship';
+        level = (content.match(/(?:Experience|Level):\s*([A-Za-z\s]+)/i) || [])[1] || 'Entry Level';
+        // 10. Clean up
         description = description.trim();
         return {
             title,

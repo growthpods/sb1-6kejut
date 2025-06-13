@@ -39,7 +39,7 @@ If the user pastes a job description, analyze it to pre-fill information, then a
 Once you believe you have all *required* information (Title, Company, Location, Description, Type, Level, and an Application Method), summarize it clearly for the user and ask for their confirmation.
 Required fields for submission are: Title, Company, Location, Description, Type (e.g., Internship), Level (e.g., Entry Level), and either Application URL or a contact email/phone.
 
-If confirmed, ask for the user's email address to verify their identity before posting. Explain that this is required to prevent spam and ensure the job posting is legitimate. Once they provide an email, tell them that in a real implementation, we would send a verification code to their email and ask them to enter it here. For now, just thank them and proceed with posting the job.
+If confirmed, ask for the user's email address to verify their identity before posting. Explain that this is required to prevent spam and ensure the job posting is legitimate. Once they provide an email, tell them that a verification code will be sent to their email. Ask them to enter the code here to complete the job posting. Only post the job if the code is correct.
 
 If not confirmed, ask what they'd like to change.
 `;

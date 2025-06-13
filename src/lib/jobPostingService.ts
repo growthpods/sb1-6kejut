@@ -53,7 +53,17 @@ export class JobPostingService {
       const scrapedData = await this.firecrawl.scrapeJobListing(url);
       
       // Step 2: Use LLM to analyze and enhance the scraped data
-      return await this.analyzeJobData(scrapedData);
+      const result = await this.analyzeJobData(scrapedData);
+      // Fallback: If required fields are missing, add them to missingFields
+      const requiredFields = ['title', 'company', 'location', 'description', 'type', 'level', 'applicationUrl'];
+      const missingFields = result.missingFields || [];
+      for (const field of requiredFields) {
+        if (!(result as any)[field]) {
+          if (!missingFields.includes(field)) missingFields.push(field);
+        }
+      }
+      result.missingFields = missingFields;
+      return result;
     } catch (error) {
       console.error('Error processing job URL:', error);
       throw error;
@@ -139,28 +149,31 @@ export class JobPostingService {
     const timeCommitment = await this.timeCommitmentParser.parseTimeCommitment(jobData);
     // Create a prompt for the LLM to analyze the job data
     const prompt = `
-I need you to analyze this job posting information and extract structured data.
+I need you to analyze this job posting or internship/program information and extract structured data.
 
-Job Information:
+Job Information (may be unstructured, from a program or internship info page):
 ${JSON.stringify(jobData, null, 2)}
 
-Please extract the following information:
-- Job title
-- Company name
-- Location
-- Job description (summarized if very long)
-- Requirements (as a list)
-- Job type (Full-Time, Part-Time, Contract, Internship, etc.)
-- Experience level (Entry Level, Intermediate, Senior, etc.)
-- Time commitment (Evening, Weekend, or Summer - choose the most appropriate)
-- Application URL (if available)
-- External link (the original job posting URL)
+Please extract the following information, even if not explicitly labeled:
+- Job title (look for main heading, program name, or first large text)
+- Company name (look for organization, hospital, university, or domain name)
+- Location (look for address, city/state, or location section)
+- Job description (summarize all relevant sections, including About, Overview, Program, Description, Summary, etc.)
+- Requirements (as a list; look for 'Eligibility', 'Requirements', 'Qualifications', or bullet points)
+- Job type (Full-Time, Part-Time, Contract, Internship, Program, etc.)
+- Experience level (Entry Level, Intermediate, Senior, etc.; default to Entry Level for high school internships)
+- Time commitment (Evening, Weekend, Summer, or as described)
+- Application URL (any link in 'Apply', 'Application', 'How to Apply', or similar sections)
+- External link (the original job posting or program URL)
+- Program dates (if available, e.g., start/end dates)
+
+If the page is a program or internship info page, extract as much as possible from all relevant sections and headings. Be robust to non-standard formats.
 
 Also indicate:
 - Confidence score (0-100) for the overall extraction
-- Any fields that couldn't be reliably extracted
+- Any fields that couldn't be reliably extracted (list them in 'missingFields')
 
-Format your response as a JSON object with these fields.
+Format your response as a JSON object with these fields. If a field is missing, set it to null and include its name in 'missingFields'.
 `;
 
     try {
