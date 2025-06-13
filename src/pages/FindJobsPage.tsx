@@ -45,7 +45,7 @@ export function FindJobsPage() {
       }
       // Apply search query filter (title, company, description)
       if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+        query = query.or(`(title.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%)`);
       }
       // Apply location filter
       if (locationQuery && locationQuery.toLowerCase() !== 'united states') {
