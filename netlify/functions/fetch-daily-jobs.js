@@ -7,7 +7,6 @@ import { createClient } from '@supabase/supabase-js';
 import { getEducationLevelParser } from '../../src/lib/educationLevelParser.js';
 import { getTimeCommitmentParser } from '../../src/lib/timeCommitmentParser.js';
 import pLimit from 'p-limit';
-import { v4 as uuidv4 } from 'uuid';
 
 // Initialize dotenv to load environment variables (primarily for local testing if any)
 // Netlify build process should make these available in the function's environment
@@ -89,41 +88,11 @@ async function fetchPage(offset) {
   }
 }
 
-async function fetchCareerSiteJobs() {
-  let allCareerJobs = [];
-  for (let batch = 0; batch < 50; batch++) {
-    try {
-      const options = {
-        method: 'GET',
-        url: 'https://internships-api.p.rapidapi.com/active-ats-7d',
-        params: { offset: batch * 100 }, // If the API supports offset/pagination
-        headers: {
-          'x-rapidapi-key': rapidApiKey,
-          'x-rapidapi-host': 'internships-api.p.rapidapi.com',
-        },
-      };
-      const response = await axios.request(options);
-      if (response.data && Array.isArray(response.data)) {
-        console.log(`Fetched ${response.data.length} jobs from Career Site API (batch ${batch})`);
-        allCareerJobs = allCareerJobs.concat(response.data);
-        if (response.data.length < 100) break; // No more jobs
-      } else {
-        console.log(`No jobs found or unexpected response from Career Site API (batch ${batch})`);
-        break;
-      }
-    } catch (error) {
-      console.error(`Error fetching jobs from Career Site API (batch ${batch}):`, error.response ? error.response.data : error.message);
-      break;
-    }
-  }
-  return allCareerJobs;
-}
-
 // Seniority/title filter to exclude non-internship roles
 function shouldExcludeAsInternship(job) {
   const title = (job.title || '').toLowerCase();
   const seniorityKeywords = [
-    'lead', 'manager', 'director', 'senior', 'principal', 'architect', 'vp', 'vice president', 'president', 'chief', 'head', 'supervisor', 'executive', 'officer', 'consultant', 'specialist', 'administrator', 'engineer iii', 'engineer iv', 'engineer v', 'sr.', 'sr ', 'staff', 'expert', 'advisor', 'strategist', 'owner', 'founder', 'co-founder', 'partner', 'owner', 'proprietor', 'professor', 'faculty', 'postdoc', 'postdoctoral', 'attorney', 'lawyer', 'counsel', 'council', 'judge', 'doctor', 'physician', 'surgeon', 'dentist', 'nurse practitioner', 'nurse manager', 'nurse director', 'nurse supervisor', 'nurse educator', 'nurse administrator', 'nurse executive', 'nurse chief', 'nurse officer', 'nurse consultant', 'nurse specialist', 'nurse advisor', 'nurse strategist', 'nurse owner', 'nurse founder', 'nurse co-founder', 'nurse partner', 'nurse proprietor', 'nurse professor', 'nurse faculty', 'nurse postdoc', 'nurse postdoctoral', 'nurse nurse attorney', 'nurse nurse lawyer', 'nurse nurse counsel', 'nurse nurse council', 'nurse nurse judge', 'nurse nurse doctor', 'nurse nurse physician', 'nurse nurse surgeon', 'nurse nurse dentist'
+    'lead', 'manager', 'director', 'senior', 'principal', 'architect', 'vp', 'vice president', 'president', 'chief', 'head', 'supervisor', 'executive', 'officer', 'consultant', 'specialist', 'administrator', 'engineer iii', 'engineer iv', 'engineer v', 'sr.', 'sr ', 'staff', 'expert', 'advisor', 'strategist', 'owner', 'founder', 'co-founder', 'partner', 'owner', 'proprietor', 'professor', 'faculty', 'postdoc', 'postdoctoral', 'attorney', 'lawyer', 'counsel', 'council', 'judge', 'doctor', 'physician', 'surgeon', 'dentist', 'nurse practitioner', 'nurse manager', 'nurse director', 'nurse supervisor', 'nurse educator', 'nurse administrator', 'nurse executive', 'nurse chief', 'nurse officer', 'nurse consultant', 'nurse specialist', 'nurse advisor', 'nurse strategist', 'nurse owner', 'nurse founder', 'nurse co-founder', 'nurse partner', 'nurse proprietor', 'nurse professor', 'nurse faculty', 'nurse postdoc', 'nurse postdoctoral', 'nurse attorney', 'nurse lawyer', 'nurse counsel', 'nurse council', 'nurse judge', 'nurse doctor', 'nurse physician', 'nurse surgeon', 'nurse dentist', 'nurse nurse practitioner', 'nurse nurse manager', 'nurse nurse director', 'nurse nurse supervisor', 'nurse nurse educator', 'nurse nurse administrator', 'nurse nurse executive', 'nurse nurse chief', 'nurse nurse officer', 'nurse nurse consultant', 'nurse nurse specialist', 'nurse nurse advisor', 'nurse nurse strategist', 'nurse nurse owner', 'nurse nurse founder', 'nurse nurse co-founder', 'nurse nurse partner', 'nurse nurse proprietor', 'nurse nurse professor', 'nurse nurse faculty', 'nurse nurse postdoc', 'nurse nurse postdoctoral', 'nurse nurse attorney', 'nurse nurse lawyer', 'nurse nurse counsel', 'nurse nurse council', 'nurse nurse judge', 'nurse nurse doctor', 'nurse nurse physician', 'nurse nurse surgeon', 'nurse nurse dentist'
   ];
   // Exclude if any seniority keyword is present and 'intern' is not in the title
   return seniorityKeywords.some(k => title.includes(k)) && !title.includes('intern');
@@ -328,16 +297,6 @@ function getYesterdayISOString() {
   return now.toISOString().split('.')[0]; // Remove milliseconds for API
 }
 
-function ensureValidJobId(job) {
-  // If job.id is not a valid UUID, generate one from a hash of title+company+location
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  if (!job.id || !uuidRegex.test(job.id)) {
-    // Use a deterministic hash or uuidv4
-    job.id = uuidv4();
-  }
-  return job;
-}
-
 // Main handler
 export async function handler() {
   const isInitialImport = process.env.INITIAL_IMPORT === 'true';
@@ -380,13 +339,8 @@ export async function handler() {
   const uniqueJobs = dedupeByTitleCompany(allTagged);
   console.log(`Deduplicated jobs: ${uniqueJobs.length}`);
 
-  // Fetch jobs from career site API
-  const careerSiteJobs = await fetchCareerSiteJobs();
-  const allJobs = uniqueJobs.concat(careerSiteJobs);
-
-  // Before upserting, ensure all jobs have valid UUIDs
-  const jobsToUpsert = allJobs.map(ensureValidJobId);
-  const { success, error, failures: upsertFailures } = await upsertJobsBatched(jobsToUpsert);
+  // Upsert in batches
+  const { success, error, failures: upsertFailures } = await upsertJobsBatched(uniqueJobs);
   console.log(`Upserted jobs: ${success}, Errors: ${error}`);
 
   // Simulate dead-letter queue (log failures)
