@@ -190,7 +190,9 @@ export function HomePage() {
           
           {/* Search Bar */}
           <div className="bg-white p-6 rounded-xl shadow-2xl max-w-4xl mx-auto"> {/* Increased padding and shadow */}
-            <SearchBar onSearch={handleSearch} defaultLocation="Texas" />
+            <SearchBar onSearch={(query, location) => {
+              navigate(`/find-jobs?search=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}`);
+            }} defaultLocation="Texas" />
           </div>
         </div>
       </div>

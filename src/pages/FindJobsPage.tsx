@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { SearchBar } from '../components/SearchBar';
 import { JobCard } from '../components/JobCard';
 import { supabase } from '../lib/supabase';
@@ -16,6 +16,7 @@ export function FindJobsPage() {
   const jobsPerPage = 20;
   const listRef = useRef<HTMLDivElement>(null);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // Parse filters from URL
   const searchQuery = searchParams.get('search') || '';
@@ -127,7 +128,9 @@ export function FindJobsPage() {
                 : 'Browse through flexible jobs for evenings, weekends, or summer breaks'}
           </p>
           <div className="max-w-4xl mx-auto">
-            <SearchBar onSearch={() => {}} />
+            <SearchBar onSearch={(query, location) => {
+              navigate(`/find-jobs?search=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}`);
+            }} />
           </div>
         </div>
       </div>
