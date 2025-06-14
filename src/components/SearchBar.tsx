@@ -5,11 +5,19 @@ import { LOCATIONS } from '../data/locations';
 interface SearchBarProps {
   onSearch: (query: string, location: string) => void;
   defaultLocation?: string;
+  query?: string;
+  location?: string;
+  setQuery?: (q: string) => void;
+  setLocation?: (l: string) => void;
 }
 
-export function SearchBar({ onSearch, defaultLocation = 'Texas' }: SearchBarProps) {
-  const [query, setQuery] = useState('');
-  const [location, setLocation] = useState(defaultLocation);
+export function SearchBar({ onSearch, defaultLocation = 'Texas', query: controlledQuery, location: controlledLocation, setQuery: setControlledQuery, setLocation: setControlledLocation }: SearchBarProps) {
+  const [uncontrolledQuery, setUncontrolledQuery] = useState('');
+  const [uncontrolledLocation, setUncontrolledLocation] = useState(defaultLocation);
+  const query = controlledQuery !== undefined ? controlledQuery : uncontrolledQuery;
+  const location = controlledLocation !== undefined ? controlledLocation : uncontrolledLocation;
+  const setQuery = setControlledQuery || setUncontrolledQuery;
+  const setLocation = setControlledLocation || setUncontrolledLocation;
   const [showLocations, setShowLocations] = useState(false);
   const [filteredLocations, setFilteredLocations] = useState(LOCATIONS);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
@@ -54,6 +62,16 @@ export function SearchBar({ onSearch, defaultLocation = 'Texas' }: SearchBarProp
     ).slice(0, 5);
     setFilteredLocations(filtered);
   }, [location]);
+
+  // Debounced real-time search for controlled mode
+  useEffect(() => {
+    if (setControlledQuery && setControlledLocation) {
+      const handler = setTimeout(() => {
+        onSearch(query, location);
+      }, 300);
+      return () => clearTimeout(handler);
+    }
+  }, [query, location, setControlledQuery, setControlledLocation, onSearch]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

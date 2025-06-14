@@ -18,12 +18,17 @@ export function FindJobsPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Parse filters from URL
-  const searchQuery = searchParams.get('search') || '';
-  const locationQuery = searchParams.get('location') || '';
-  // Optionally, parse more filters from URL if you add them
+  // Controlled search state
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [locationQuery, setLocationQuery] = useState(searchParams.get('location') || '');
 
-  // Fetch jobs in batches for infinite scroll
+  // Update URL when search changes (optional, for shareability)
+  useEffect(() => {
+    navigate(`/find-jobs?search=${encodeURIComponent(searchQuery)}&location=${encodeURIComponent(locationQuery)}`);
+    // eslint-disable-next-line
+  }, [searchQuery, locationQuery]);
+
+  // Fetch jobs in batches for infinite scroll and on search change
   useEffect(() => {
     setJobs([]);
     setPage(0);
@@ -128,9 +133,14 @@ export function FindJobsPage() {
                 : 'Browse through flexible jobs for evenings, weekends, or summer breaks'}
           </p>
           <div className="max-w-4xl mx-auto">
-            <SearchBar onSearch={(query, location) => {
-              navigate(`/find-jobs?search=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}`);
-            }} />
+            <SearchBar
+              onSearch={() => {}} // Not needed for real-time
+              defaultLocation="Texas"
+              query={searchQuery}
+              location={locationQuery}
+              setQuery={setSearchQuery}
+              setLocation={setLocationQuery}
+            />
           </div>
         </div>
       </div>
